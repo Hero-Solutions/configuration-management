@@ -159,7 +159,7 @@ server {
     fastcgi_param SCRIPT_FILENAME  $document_root$fastcgi_script_name;
     fastcgi_param SCRIPT_NAME      $fastcgi_script_name;
     include /etc/nginx/fastcgi_params;
-    fastcgi_read_timeout 300;
+    fastcgi_read_timeout 7200;
     client_max_body_size 50000M;
 {% if php.request_buffering != "on" %}
     fastcgi_request_buffering {{ php.request_buffering }};
