@@ -27,9 +27,9 @@ To use this Ansible playbook for an installation of the Flemish Art Collection's
 * Ansible >= 2.9
 * python-bcrypt
 * python-passlib
-* python-argcomplete (activate this by running the command `activate-global-python-argcomplete` as root user)
+* python-argcomplete (after installation, activate this by running the command `activate-global-python-argcomplete` as root user)
 
-Along with the following Ansible collections:
+Along with the following Ansible collections (may be installed through the command `ansible-galaxy role install` and then the name of the package):
 
 * community.mysql
 * community.mongodb

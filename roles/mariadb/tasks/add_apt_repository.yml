@@ -26,4 +26,3 @@
 - name: Add apt repository
   apt_repository:
     repo: "{{ mariadb_apt_repository }}"
-
