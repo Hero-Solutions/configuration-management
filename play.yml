@@ -1,6 +1,6 @@
 ---
 - name: Install common packages
-  hosts: datahub,datahub_pipeline,datahub_dashboard,arthub,resourcespace,cantaloupe,imagehub,condition_reports,culturize
+  hosts: common,datahub,datahub_pipeline,datahub_dashboard,arthub,resourcespace,cantaloupe,imagehub,condition_reports,culturize
   roles:
     - common
 
