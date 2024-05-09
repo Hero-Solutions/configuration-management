@@ -29,7 +29,7 @@ To use this Ansible playbook for an installation of the Flemish Art Collection's
 * python-passlib
 * python-argcomplete (after installation, activate this by running the command `activate-global-python-argcomplete` as root user)
 
-Along with the following Ansible collections (may be installed through the command `ansible-galaxy role install` and then the name of the package):
+Along with the following Ansible collections (may be installed through the command `ansible-galaxy role install <collection>`):
 
 * community.mysql
 * community.mongodb

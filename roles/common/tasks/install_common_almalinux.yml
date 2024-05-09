@@ -3,7 +3,7 @@
   dnf:
     name:
       - git
-      - screen
+      - tmux
       - curl
       - dirmngr
       - dnf-plugins-core
