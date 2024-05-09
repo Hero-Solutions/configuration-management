@@ -5,7 +5,7 @@
     - common
 
 - name: Install mariadb
-  hosts: resourcespace,imagehub,condition_reports
+  hosts: common,resourcespace,imagehub,condition_reports
   roles:
     - mariadb
 
