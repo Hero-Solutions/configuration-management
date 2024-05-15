@@ -1,10 +1,10 @@
 ---
-- name: Add apt repository if needed
-  include_tasks: add_apt_repository.yml
+- name: Add apt repository on Debian/Ubuntu if needed
+  include_tasks: add_repository_debian.yml
   when: (ansible_facts.distribution == 'Debian' and (ansible_facts.distribution_major_version == '10' or ansible_facts.distribution_major_version == '11'))
      or (ansible_facts.distribution == 'Ubuntu' and ansible_facts.distribution_major_version == '20')
 
-- name: Install php-fpm and deps
+- name: Install php-fpm and deps on Debian/Ubuntu
   apt:
     name:
       - php{{ php.version }}
@@ -22,11 +22,30 @@
       - php-pear
       - composer
     state: present
+  when: ansible_facts.distribution == 'Debian' or ansible_facts.distribution == 'Ubuntu'
+
+- name: Install php-fpm and deps on AlmaLinux
+  dnf:
+    name:
+      - php
+      - php-fpm
+      - php-cli
+      - php-fileinfo
+      - php-intl
+      - php-json
+      - php-mbstring
+      - php-curl
+      - php-xml
+      - php-zip
+      - php-devel
+      - php-pear
+    state: present
+  when: ansible_facts.distribution == 'AlmaLinux'
 
 # First run of install will output a huge error, but this can be safely ignored
 - name: Install mongodb through pear
   community.general.pear:
-    name: pecl/mongodb
+    name: pecl/mongodb-1.16.2
     state: present
   ignore_errors: yes
   no_log: yes
@@ -36,9 +55,25 @@
     src: php.ini
     dest: /etc/php/{{ php.version }}/fpm/php.ini
   notify: restart php-fpm
+  when: ansible_facts.distribution == 'Debian' or ansible_facts.distribution == 'Ubuntu'
 
-- name: Enable php-fpm service
+- name: Enable mongodb extension on AlmaLinux
+  template:
+    src: 20-mongodb.ini
+    dest: /etc/php.d/20-mongodb.ini
+  notify: restart php-fpm
+  when: ansible_facts.distribution == 'AlmaLinux'
+
+- name: Enable php-fpm service on Debian/Ubuntu
   service:
     name: php{{ php.version }}-fpm
     state: started
     enabled: yes
+  when: ansible_facts.distribution == 'Debian' or ansible_facts.distribution == 'Ubuntu'
+
+- name: Enable php-fpm service on AlmaLinux
+  service:
+    name: php-fpm
+    state: started
+    enabled: yes
+  when: ansible_facts.distribution == 'AlmaLinux'

@@ -1,5 +1,5 @@
 ---
-- name: Install git, tmux, curl, dirmngr, dnf-plugins-core, gcc and ca-certificates
+- name: Install git, tmux, curl, dirmngr, dnf-plugins-core, gcc, ca-certificates and make
   dnf:
     name:
       - git
@@ -9,6 +9,7 @@
       - dnf-plugins-core
       - gcc
       - ca-certificates
+      - make
 
 - name: Install python-pip, python-virtualenv, python-setuptools and python-devel when python 2.*
   dnf:

@@ -1,5 +1,12 @@
 ---
-- name: restart php-fpm
+- name: restart php-fpm on Debian/Ubuntu
   service:
     name: php{{ php.version }}-fpm
     state: restarted
+  when: ansible_facts.distribution == 'Debian' or ansible_facts.distribution == 'Ubuntu'
+
+- name: restart php-fpm on AlmaLinux
+  service:
+    name: php-fpm
+    state: restarted
+  when: ansible_facts.distribution == 'AlmaLinux'
