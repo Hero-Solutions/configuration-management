@@ -47,8 +47,8 @@
   community.general.pear:
     name: pecl/mongodb-1.16.2
     state: present
-  ignore_errors: yes
-  no_log: yes
+  ignore_errors: true
+  no_log: true
 
 - name: Copy php.ini
   template:
@@ -68,12 +68,12 @@
   service:
     name: php{{ php.version }}-fpm
     state: started
-    enabled: yes
+    enabled: true
   when: ansible_facts.distribution == 'Debian' or ansible_facts.distribution == 'Ubuntu'
 
 - name: Enable php-fpm service on AlmaLinux
   service:
     name: php-fpm
     state: started
-    enabled: yes
+    enabled: true
   when: ansible_facts.distribution == 'AlmaLinux'

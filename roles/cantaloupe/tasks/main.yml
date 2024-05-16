@@ -21,7 +21,7 @@
 
 - name: Download and unzip cantaloupe
   unarchive:
-    remote_src: yes
+    remote_src: true
     src: "https://github.com/cantaloupe-project/cantaloupe/releases/download/v{{ cantaloupe.version }}/cantaloupe-{{ cantaloupe.version }}.zip"
     dest: "{{ cantaloupe.repo_dir }}"
   become_user: "{{ application_user }}"
@@ -30,7 +30,7 @@
   copy:
     src: "{{ cantaloupe.repo_dir }}/cantaloupe-{{ cantaloupe.version }}/"
     dest: "{{ cantaloupe.dir }}/"
-    remote_src: yes
+    remote_src: true
   become_user: "{{ application_user }}"
 
 - name: Create cantaloupe_delegate repo folder
@@ -55,7 +55,7 @@
   copy:
     src: "{{ cantaloupe.delegate_script.repo_dir }}/repo/{{ cantaloupe.delegate_script.script_name }}"
     dest: "{{ cantaloupe.dir }}/"
-    remote_src: yes
+    remote_src: true
   become_user: "{{ application_user }}"
   when: cantaloupe.delegate_script.enabled
 
@@ -80,8 +80,8 @@
 - name: Enable cantaloupe
   systemd:
     name: "{{ cantaloupe.service_name }}"
-    enabled: yes
-    daemon_reload: yes
+    enabled: true
+    daemon_reload: true
     state: restarted
 
 - name: Set fact to inform imagehub that cantaloupe is present

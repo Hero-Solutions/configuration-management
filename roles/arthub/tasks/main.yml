@@ -76,7 +76,7 @@
     state: present
     executable: "{{ arthub.dir }}/bin/bundle"
     gemfile: "{{ arthub.dir }}/Gemfile"
-    deployment_mode: yes
+    deployment_mode: true
   become_user: "{{ application_user }}"
 
 - name: Check if rails secret file exists
@@ -114,8 +114,8 @@
 - name: Enable solr
   systemd:
     name: solr
-    daemon_reload: yes
-    enabled: yes
+    daemon_reload: true
+    enabled: true
 
 - name: Stop solr on redeploying
   systemd:
@@ -127,7 +127,7 @@
   copy:
     src: "{{ arthub.dir }}/solr-conf/blacklight-core/"
     dest: "{{ arthub.dir }}/solr/server/solr/blacklight-core/"
-    remote_src: yes
+    remote_src: true
   become_user: "{{ application_user }}"
   when: gitrc is changed
 
@@ -191,8 +191,8 @@
 - name: Enable arthub
   systemd:
     name: arthub
-    daemon_reload: yes
-    enabled: yes
+    daemon_reload: true
+    enabled: true
 
 - name: Restart rails if gitrc has changed
   systemd: 

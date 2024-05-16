@@ -3,7 +3,7 @@
   set_fact:
     datahub_pipeline:
       datahub_url: "{{ datahub_pipeline.datahub_protocol }}://{{ datahub.nginx.server_name }}"
-    cacheable: yes
+    cacheable: true
   when: datahub_pipeline.datahub_url is undefined
   become_user: "{{ application_user }}"
 

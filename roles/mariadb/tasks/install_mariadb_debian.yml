@@ -5,7 +5,7 @@
 # apt update currently not working, disabled for now
 #- name: Update apt repositories
 #  apt:
-#    update_cache: yes
+#    update_cache: true
 
 - name: Install MariaDB
   apt:

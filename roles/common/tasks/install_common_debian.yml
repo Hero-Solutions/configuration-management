@@ -2,7 +2,7 @@
 # apt update currently not working, disabled for now
 #- name: Update apt repositories
 #  apt:
-#    update_cache: yes
+#    update_cache: true
 
 - name: Install git, screen, curl, software-properties-common, dirmngr, apt-transport-https and ca-certificates
   apt:
