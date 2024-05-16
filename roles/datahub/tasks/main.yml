@@ -12,36 +12,13 @@
         db_name: "{{ datahub.mongodb.username }}"
         db_password: "{{ datahub.mongodb.password }}"
 
-- name: Check if admin user exists in MongoDB
-  command: "{{ mongo_cmd }} --quiet --eval \"db.Users.find({ 'username'{{ ':' }} '{{ datahub.admin.username }}' })\" datahub"
-  register: mongodb_admin_user_exists
-  become_user: "{{ application_user }}"
+- name: Execute mongo commands on Debian/Ubuntu
+  include_tasks: mongo_commands_debian.yml
+  when: ansible_facts.distribution == 'Debian' or ansible_facts.distribution == 'Ubuntu'
 
-- name: Insert admin user into MongoDB
-  command: "{{ mongo_cmd }} --eval 'db.Users.insert({{ lookup(\"template\", \"./mongodb_admin_user.json\") }})' datahub"
-  when: mongodb_admin_user_exists.stdout | length == 0
-  become_user: "{{ application_user }}"
-
-- name: Check if consumer user exists in MongoDB
-  command: "{{ mongo_cmd }} --quiet --eval \"db.Users.find({ 'username'{{ ':' }} '{{ datahub.consumer.username }}' })\" datahub"
-  register: mongodb_consumer_user_exists
-  become_user: "{{ application_user }}"
-
-- name: Insert consumer user into MongoDB
-  command: "{{ mongo_cmd }} --eval 'db.Users.insert({{ lookup(\"template\", \"./mongodb_consumer_user.json\") }})' datahub"
-  when: mongodb_consumer_user_exists.stdout | length == 0
-  become_user: "{{ application_user }}"
-
-- name: Check if OAuth client exists
-  command: "{{ mongo_cmd }} --quiet --eval \"db.Client.find({ 'applicationName' {{ ':' }} '{{ datahub.oauth.application_name }}' })\" datahub"
-  register: mongodb_oauth_client_exists
-  become_user: "{{ application_user }}"
-
-- name: Fetch consumer _id from MongoDB
-  command: "{{ mongo_cmd }} --quiet --eval \"db.Users.find({ 'username' {{ ':' }} '{{ datahub.consumer.username }}' }, { '_id' {{ ':' }} 1 })\" datahub"
-  register: mongodb_consumer_id_string
-  when: mongodb_oauth_client_exists.stdout | length == 0
-  become_user: "{{ application_user }}"
+- name: Execute mongo commands on AlmaLinux
+  include_tasks: mongo_commands_almalinux.yml
+  when: ansible_facts.distribution == 'AlmaLinux'
 
 - name: Store _id in a var, generate client_id, secret and external_id
   set_fact:
@@ -54,23 +31,6 @@
         secret: "{{ lookup('password', '/dev/null chars=ascii_lowercase,digits length=50') }}"
         external_id: "{{ lookup('password', '/dev/null chars=hexdigits length=6') | lower }}"
   when: mongodb_oauth_client_exists.stdout | length == 0
-
-- name: Insert OAuth client into MongoDB
-  command: "{{ mongo_cmd }} --eval 'db.Client.insert({{ lookup(\"template\", \"./mongodb_oauth_client.json\") }})' datahub"
-  when: mongodb_oauth_client_exists.stdout | length == 0
-  become_user: "{{ application_user }}"
-
-- name: Fetch client_id to use in the datahub pipeline
-  command: "{{ mongo_cmd }} --quiet --eval \"db.Client.find({ 'applicationName' {{ ':' }} '{{ datahub.oauth.application_name }}' }, { '_id' {{ ':' }} 0, 'randomId' {{ ':' }} 1 })\" datahub"
-  register: oauth_client_id_raw
-  when: mongodb_oauth_client_exists.stdout | length > 0
-  become_user: "{{ application_user }}"
-
-- name: Fetch secret to use in the datahub pipeline
-  command: "{{ mongo_cmd }} --quiet --eval \"db.Client.find({ 'applicationName' {{ ':' }} '{{ datahub.oauth.application_name }}' }, { '_id' {{ ':' }} 0, 'secret' {{ ':' }} 1 })\" datahub"
-  register: oauth_secret_raw
-  when: mongodb_oauth_client_exists.stdout | length > 0
-  become_user: "{{ application_user }}"
 
 - name: Store client_id and secret in vars
   set_fact:
