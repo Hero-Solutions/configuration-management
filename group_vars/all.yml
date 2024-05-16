@@ -17,7 +17,7 @@ datahub:
   branch: master
   dir: /opt/datahub
   service_name: Datahub
-  pagination_num_records: 25 
+  pagination_num_records: 25
   nginx:
     name: datahub
     configfile: datahub
