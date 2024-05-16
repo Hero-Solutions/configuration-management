@@ -56,7 +56,7 @@
   when: mongodb_oauth_client_exists.stdout | length == 0
 
 - name: Insert OAuth client into MongoDB
-  command: "{{ mongo_cmd }} --eval 'db.Client.insert({{ lookup(\"template", "./mongodb_oauth_client.json\") }})' datahub"
+  command: "{{ mongo_cmd }} --eval 'db.Client.insert({{ lookup(\"template\", \"./mongodb_oauth_client.json\") }})' datahub"
   when: mongodb_oauth_client_exists.stdout | length == 0
   become_user: "{{ application_user }}"
 
