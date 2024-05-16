@@ -4,6 +4,7 @@ cron_dir: /opt
 cron_name: arthub
 is_resourcespace: false
 is_cantaloupe: false
+mongo_cmd: mongo
 php:
   version: 7.2
   user: www-data
