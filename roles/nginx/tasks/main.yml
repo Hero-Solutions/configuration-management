@@ -1,21 +1,11 @@
 ---
 - name: Install nginx on Debian/Ubuntu
-  apt:
-    name: nginx
-    state: present
+  include_tasks: install_nginx_debian.yml
   when: ansible_facts.distribution == 'Debian' or ansible_facts.distribution == 'Ubuntu'
 
 - name: Install nginx on AlmaLinux
-  dnf:
-    name: nginx
-    state: present
+  include_tasks: install_nginx_almalinux.yml
   when: ansible_facts.distribution == 'AlmaLinux'
-
-- name: Delete default nginx vhost symlink
-  file:
-    path: /etc/nginx/sites-enabled/default
-    state: absent
-  notify: restart nginx
 
 - name: Enable nginx service
   service:

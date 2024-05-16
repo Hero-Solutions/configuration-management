@@ -1,0 +1,11 @@
+---
+- name: Install nginx
+  apt:
+    name: nginx
+    state: present
+
+- name: Delete default nginx vhost symlink
+  file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+  notify: restart nginx
