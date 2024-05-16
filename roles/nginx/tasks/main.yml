@@ -1,8 +1,15 @@
 ---
-- name: Install nginx
+- name: Install nginx on Debian/Ubuntu
   apt:
     name: nginx
     state: present
+  when: ansible_facts.distribution == 'Debian' or ansible_facts.distribution == 'Ubuntu'
+
+- name: Install nginx on AlmaLinux
+  dnf:
+    name: nginx
+    state: present
+  when: ansible_facts.distribution == 'AlmaLinux'
 
 - name: Delete default nginx vhost symlink
   file:
