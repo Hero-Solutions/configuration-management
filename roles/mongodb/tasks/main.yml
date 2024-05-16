@@ -1,11 +1,28 @@
 ---
-- name: Add apt repository
+- name: Add apt repository on Debian/Ubuntu
   include_tasks: add_apt_repository.yml
+  when: ansible_facts.distribution == 'Debian' or ansible_facts.distribution == 'Ubuntu'
 
-- name: Install mongodb-org
+- name: Add yum repository on AlmaLinux
+  yum_repository:
+    name: mongodb-org
+    description: MongoDB Repository
+    baseurl: https://repo.mongodb.org/yum/redhat/9/mongodb-org/7.0/x86_64/
+    gpgkey: https://pgp.mongodb.com/server-7.0.asc
+    repo_gpgcheck: true
+  when: ansible_facts.distribution == 'AlmaLinux'
+
+- name: Install mongodb-org on Debian/Ubuntu
   apt:
     name: mongodb-org
   notify: Restart mongodb
+  when: ansible_facts.distribution == 'Debian' or ansible_facts.distribution == 'Ubuntu'
+
+- name: Install mongodb-org on AlmaLinux
+  dnf:
+    name: mongodb-org
+  notify: Restart mongodb
+  when: ansible_facts.distribution == 'AlmaLinux'
 
 - name: Flush handlers
   meta: flush_handlers

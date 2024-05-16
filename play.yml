@@ -1,24 +1,24 @@
 ---
 - name: Install common packages
-  hosts: common,datahub,datahub_pipeline,datahub_dashboard,arthub,resourcespace,cantaloupe,imagehub,condition_reports,culturize
+  hosts: datahub,datahub_pipeline,datahub_dashboard,arthub,resourcespace,cantaloupe,imagehub,condition_reports,culturize
   roles:
     - common
 
 - name: Install mariadb
-  hosts: common,resourcespace,imagehub,condition_reports
+  hosts: resourcespace,imagehub,condition_reports
   roles:
     - mariadb
-
-- name: Install php-fpm
-  hosts: datahub,datahub_dashboard,resourcespace,cantaloupe,imagehub,condition_reports,culturize
-  roles:
-    - php-fpm
-    - geerlingguy.composer
 
 - name: Install mongodb
   hosts: datahub,datahub_dashboard
   roles:
     - mongodb
+
+- name: Install php-fpm
+  hosts: datahub,datahub_dashboard,resourcespace,cantaloupe,imagehub,condition_reports,culturize
+  roles:
+    - php-fpm
+    - composer
 
 - name: Install nginx
   hosts: datahub,datahub_dashboard,arthub,resourcespace,cantaloupe,imagehub,condition_reports,culturize
