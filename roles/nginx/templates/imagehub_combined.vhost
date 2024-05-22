@@ -27,7 +27,7 @@ server {
   }
 {% endif %}
 
-  index index.php index.html index.htm;
+  index imagehub.php index.php index.html index.htm;
 
 {% if vhost.document_root is defined %}
 
