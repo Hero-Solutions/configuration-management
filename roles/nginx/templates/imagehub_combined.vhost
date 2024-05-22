@@ -71,6 +71,18 @@ server {
     try_files $uri /{{ vhost.index }}$is_args$args;
   }
 
+  # Pass requests for the Imagehub to the appropriate PHP file
+  location /imagehub {
+    add_header Access-Control-Allow-Origin *;
+    try_files $uri /{{ vhost.index }}$is_args$args;
+  }
+
+  # Pass requests for the Imagehub to the appropriate PHP file
+  location /iiif {
+    add_header Access-Control-Allow-Origin *;
+    try_files $uri /{{ vhost.index }}$is_args$args;
+  }
+
   location ~ /(authenticate|authcheck).* {
     add_header Access-Control-Allow-Origin *;
     try_files $uri /{{ vhost.index }}$is_args$args;
