@@ -209,6 +209,7 @@
         nginx_vhost:
           server_name: "{{ arthub.nginx.server_name }}"
           name: "{{ arthub.nginx.name }}"
+          configfile: "{{ arthub.nginx.configfile }}"
           type: proxy
           upstream: http://localhost:3000
           ssl: "{{ arthub.nginx.ssl }}"
