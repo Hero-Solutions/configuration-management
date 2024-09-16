@@ -258,6 +258,9 @@ condition_reports:
     index: index.php
     redirect_to_https: true
     ssl : {}
+  php:
+    post_max_size: 30M
+    upload_max_filesize: 30M
 culturize:
   dir: /opt/culturize
   github_file: https://raw.githubusercontent.com/example_org/culturize-example/main/work/nginx_redirect.conf

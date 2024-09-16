@@ -147,6 +147,9 @@
     apply:
       vars:
         pool_name: "{{ condition_reports.nginx.name }}"
+        php_admin_values:
+          post_max_size: "{{ condition_reports.php.post_max_size }}"
+          upload_max_filesize: "{{ condition_reports.php.upload_max_filesize }}"
 
 - name: Include condition reports nginx vhost
   include_role:
