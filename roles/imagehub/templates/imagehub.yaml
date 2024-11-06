@@ -33,7 +33,7 @@ parameters:
       {{ key }}: {{ value }}
 {% endfor %}
 {% else %}
-    transcription_fields: {}
+    datahub_metadata_fields: {}
 {% endif %}
 
     placeholder_id: {{ imagehub.placeholder_id }}
