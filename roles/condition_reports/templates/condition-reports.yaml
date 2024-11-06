@@ -2,8 +2,8 @@
 parameters:
   # The first locale in the list is the default locale
   locales:
-    - en
     - nl
+    - en
 
   datahub_url: '{{ condition_reports.datahub_url }}'
   datahub_language: nl
