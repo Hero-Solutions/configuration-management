@@ -1,7 +1,11 @@
 ---
-- name: Update apt repositories and install git, screen, curl, pip, virtualenv, setuptools, software-properties-common, dirmngr, apt-transport-https and ca-certificates
+# Using shell instead of apt because apt does not appear to be working (cause unknown)
+- name: Update apt repositories
+  shell: apt-get update
+  become: true
+
+- name: Install git, screen, curl, pip, virtualenv, setuptools, software-properties-common, dirmngr, apt-transport-https and ca-certificates
   apt:
-    update_cache: yes
     name:
       - git
       - screen
