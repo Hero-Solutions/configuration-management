@@ -193,6 +193,10 @@ imagehub:
   store_datahub_record_ids: false
   one_manifest_per_object: true
   use_placeholder_for_images_in_copyright: false
+  store_transcriptions: false
+  transcription_fields: []
+  store_datahub_metadata: false
+  datahub_metadata_fields: []
   meemoo_manifest_label_nl: title
   meemoo_manifest_label_en: title
   meemoo_canvas_label_nl: title

@@ -17,6 +17,24 @@ parameters:
     store_datahub_record_ids: {{ imagehub.store_datahub_record_ids }}
     one_manifest_per_object: {{ imagehub.one_manifest_per_object }}
     use_placeholder_for_images_in_copyright : {{ imagehub.use_placeholder_for_images_in_copyright }}
+    store_transcriptions: {{ imagehub.store_transcriptions }}
+{% if imagehub.transcription_fields %}
+    transcription_fields:
+{% for key, value in imagehub.transcription_fields.items() %}
+      {{ key }}: {{ value }}
+{% endfor %}
+{% else %}
+    transcription_fields: {}
+{% endif %}
+    store_datahub_metadata: {{ imagehub.store_datahub_metadata }}
+{% if imagehub.datahub_metadata_fields %}
+    datahub_metadata_fields:
+{% for key, value in imagehub.datahub_metadata_fields.items() %}
+      {{ key }}: {{ value }}
+{% endfor %}
+{% else %}
+    transcription_fields: {}
+{% endif %}
 
     placeholder_id: {{ imagehub.placeholder_id }}
 
