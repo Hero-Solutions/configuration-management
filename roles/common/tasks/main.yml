@@ -1,13 +1,7 @@
 ---
-- name: Update apt repositories
-  shell: apt-get update
-  become: true
-  register: update_output
-- debug:
-    var: update_output.stdout_lines
-
-- name: Install git, screen, curl, pip, virtualenv, setuptools, software-properties-common, dirmngr, apt-transport-https and ca-certificates
+- name: Update apt repositories and install git, screen, curl, pip, virtualenv, setuptools, software-properties-common, dirmngr, apt-transport-https and ca-certificates
   apt:
+    update_cache: yes
     name:
       - git
       - screen
