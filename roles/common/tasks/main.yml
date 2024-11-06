@@ -2,6 +2,7 @@
 - name: Update apt repositories
   apt:
     update_cache: yes
+  become: true
 
 - name: Install git, screen, curl, pip, virtualenv, setuptools, software-properties-common, dirmngr, apt-transport-https and ca-certificates
   apt:
