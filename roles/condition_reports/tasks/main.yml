@@ -95,7 +95,7 @@
 - name: Copy .env for condition reports
   template:
     src: .env
-    dest: "{{ condition_reports.repo_dir }}/shared/.env"
+    dest: "{{ condition_reports.repo_dir }}/repo/.env"
   become_user: "{{ application_user }}"
 
 - name: Copy condition-reports.yaml
