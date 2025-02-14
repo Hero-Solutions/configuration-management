@@ -58,7 +58,8 @@ server {
   location ~ \.php$ {
     try_files $uri =404;
     fastcgi_pass unix:/run/php/php{{ php.version }}-fpm-{{ vhost.php_socket_name }}.sock;
-    fastcgi_param SCRIPT_FILENAME  $document_root$fastcgi_script_name;
+    fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
+    fastcgi_param DOCUMENT_ROOT $realpath_root;
     include /etc/nginx/fastcgi_params;
 {% if php.request_buffering != "on" %}
     fastcgi_request_buffering {{ php.request_buffering }};
