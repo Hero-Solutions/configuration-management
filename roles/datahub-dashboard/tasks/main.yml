@@ -85,7 +85,7 @@
 - name: Copy .env for datahub dashboard (Symfony 7+)
   template:
     src: .env
-    dest: "{{ datahub_dashboard.repo_dir }}/repo/app/.env"
+    dest: "{{ datahub_dashboard.repo_dir }}/repo/.env"
   become_user: "{{ application_user }}"
 
 - name: Link datahub dashboard repo
