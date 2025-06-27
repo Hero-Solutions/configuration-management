@@ -178,32 +178,32 @@
 
 - name: Ensure JWT key directory exists
   file:
-    path: "{{ datahub.repo_dir }}/config/jwt"
+    path: "{{ datahub.repo_dir }}/repo/config/jwt"
     state: directory
     mode: '0750'
     owner: "{{ application_user }}"
     group: "{{ application_user }}"
 
 - name: Generate private key if not exists
-  command: "openssl genpkey -algorithm RSA -out {{ datahub.repo_dir }}/config/jwt/private.pem -pkeyopt rsa_keygen_bits:4096"
+  command: "openssl genpkey -algorithm RSA -out {{ datahub.repo_dir }}/repo/config/jwt/private.pem -pkeyopt rsa_keygen_bits:4096"
   args:
-    creates: "{{ datahub.repo_dir }}/config/jwt/private.pem"
+    creates: "{{ datahub.repo_dir }}/repo/config/jwt/private.pem"
 
 - name: Generate public key from private key
-  command: "openssl rsa -pubout -in {{ datahub.repo_dir }}/config/jwt/private.pem -out {{ datahub.repo_dir }}/config/jwt/public.pem"
+  command: "openssl rsa -pubout -in {{ datahub.repo_dir }}/repo/config/jwt/private.pem -out {{ datahub.repo_dir }}/repo/config/jwt/public.pem"
   args:
-    creates: "{{ datahub.repo_dir }}/config/jwt/public.pem"
+    creates: "{{ datahub.repo_dir }}/repo/config/jwt/public.pem"
 
 - name: Set permissions on private key
   file:
-    path: "{{ datahub.repo_dir }}/config/jwt/private.pem"
+    path: "{{ datahub.repo_dir }}/repo/config/jwt/private.pem"
     mode: '0600'
     owner: "{{ application_user }}"
     group: "{{ application_user }}"
 
 - name: Set permissions on public key
   file:
-    path: "{{ datahub.repo_dir }}/config/jwt/public.pem"
+    path: "{{ datahub.repo_dir }}/repo/config/jwt/public.pem"
     mode: '0644'
     owner: "{{ application_user }}"
     group: "{{ application_user }}"
