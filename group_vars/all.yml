@@ -4,8 +4,10 @@ cron_dir: /opt
 cron_name: arthub
 is_resourcespace: false
 is_cantaloupe: false
+mariadb_version: 11
+mongodb_version: 4.4
 php:
-  version: 7.2
+  version: 8.4
   user: www-data
   group: www-data
   request_buffering: "on"

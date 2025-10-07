@@ -53,14 +53,13 @@
   apt:
     name:
       - libmysqlclient-dev
-#  when: ansible_facts.distribution == 'Ubuntu' and ansible_facts.distribution_major_version == '18'
   when: ansible_facts.distribution == 'Ubuntu'
 
-- name: Install default-libmysqlclient-dev if Debian 10 or 11
+- name: Install default-libmysqlclient-dev if Debian
   apt:
     name:
       - default-libmysqlclient-dev
-  when: ansible_facts.distribution == 'Debian' and (ansible_facts.distribution_major_version == '10' or ansible_facts.distribution_major_version == '11')
+  when: ansible_facts.distribution == 'Debian'
 
 - name: Install Catmandu
   cpanm:

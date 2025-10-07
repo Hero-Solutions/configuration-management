@@ -5,10 +5,8 @@ Configuration and management of a Datahub/Imagehub/Arthub installation via Ansib
 # Considerations
 
 This Ansible setup currently only works on Debian-based controlled machines. At the time of writing, the following distributions are supported:
-* Debian 10
-* Debian 11
-* Ubuntu 18.04
-* Ubuntu 20.04
+* Debian >= 10
+* Ubuntu >= 20.04
 
 The controlled machine must also have an application user with sudo privileges along with Python installed.
 

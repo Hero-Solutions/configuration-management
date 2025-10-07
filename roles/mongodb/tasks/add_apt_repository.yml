@@ -1,32 +1,27 @@
 ---
-- name: Configure apt repository if Debian 10
+- name: Determine distribution codename
   set_fact:
-    mongodb_pgp_url: https://www.mongodb.org/static/pgp/server-4.4.asc
-    mongodb_apt_repository: "deb http://repo.mongodb.org/apt/debian buster/mongodb-org/4.4 main"
-  when: ansible_facts.distribution == 'Debian' and ansible_facts.distribution_major_version == '10'
+    distro_codename: "{{ ansible_facts.lsb.codename | default(ansible_facts.os_release.codename, true) }}"
 
-- name: Configure apt repository if Debian 11
+- name: Set MongoDB APT repository URL for Debian
   set_fact:
-    mongodb_pgp_url: https://www.mongodb.org/static/pgp/server-4.4.asc
-    mongodb_apt_repository: "deb http://repo.mongodb.org/apt/debian buster/mongodb-org/4.4 main"
-  when: ansible_facts.distribution == 'Debian' and ansible_facts.distribution_major_version == '11'
+    mongodb_pgp_url: "https://www.mongodb.org/static/pgp/server-{{ mongodb_version }}.asc"
+    mongodb_apt_repository: "deb [arch=amd64,arm64] http://repo.mongodb.org/apt/debian {{ distro_codename }}/mongodb-org/{{ mongodb_version }} main"
+  when: ansible_facts.distribution == 'Debian'
 
-- name: Configure apt repository if Ubuntu 18
+- name: Set MongoDB APT repository URL for Ubuntu
   set_fact:
-    mongodb_pgp_url: https://www.mongodb.org/static/pgp/server-4.4.asc
-    mongodb_apt_repository: "deb https://repo.mongodb.org/apt/ubuntu bionic/mongodb-org/4.4 multiverse"
-  when: ansible_facts.distribution == 'Ubuntu' and ansible_facts.distribution_major_version == '18'
+    mongodb_pgp_url: "https://www.mongodb.org/static/pgp/server-{{ mongodb_version }}.asc"
+    mongodb_apt_repository: "deb [arch=amd64,arm64] https://repo.mongodb.org/apt/ubuntu {{ distro_codename }}/mongodb-org/{{ mongodb_version }} multiverse"
+  when: ansible_facts.distribution == 'Ubuntu'
 
-- name: Configure apt repository if Ubuntu 20
-  set_fact:
-    mongodb_pgp_url: https://www.mongodb.org/static/pgp/server-4.4.asc
-    mongodb_apt_repository: "deb https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/4.4 multiverse"
-  when: ansible_facts.distribution == 'Ubuntu' and ansible_facts.distribution_major_version == '20'
-
-- name: Add PGP key
+- name: Add MongoDB signing key
   apt_key:
     url: "{{ mongodb_pgp_url }}"
+    state: present
 
-- name: Add apt repository
+- name: Add MongoDB APT repository
   apt_repository:
     repo: "{{ mongodb_apt_repository }}"
+    state: present
+    filename: "mongodb"

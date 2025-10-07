@@ -1,20 +1,22 @@
 ---
-- name: Add apt key if Debian 10 or 11
+- name: Determine distribution codename
+  set_fact:
+    distro_codename: "{{ ansible_facts.lsb.codename | default(ansible_facts.os_release.codename, true) }}"
+
+- name: Add Sury PHP signing key for Debian
   apt_key:
     url: "https://packages.sury.org/php/apt.gpg"
-  when: ansible_facts.distribution == 'Debian' and (ansible_facts.distribution_major_version == '10' or ansible_facts.distribution_major_version == '11')
+    state: present
+  when: ansible_facts.distribution == 'Debian'
 
-- name: Add Debian 10 apt repository
+- name: Add Sury PHP APT repository for Debian
   apt_repository:
-    repo: "deb https://packages.sury.org/php/ buster main"
-  when: ansible_facts.distribution == 'Debian' and ansible_facts.distribution_major_version == '10'
+    repo: "deb https://packages.sury.org/php/ {{ distro_codename }} main"
+    state: present
+  when: ansible_facts.distribution == 'Debian'
 
-- name: Add Debian 11 apt repository
-  apt_repository:
-    repo: "deb https://packages.sury.org/php/ bullseye main"
-  when: ansible_facts.distribution == 'Debian' and ansible_facts.distribution_major_version == '11'
-
-- name: Add Ubuntu 20 apt repository
+- name: Add Ondrej PHP PPA for Ubuntu
   apt_repository:
     repo: "ppa:ondrej/php"
-  when: ansible_facts.distribution == 'Ubuntu' and ansible_facts.distribution_major_version == '20'
+    state: present
+  when: ansible_facts.distribution == 'Ubuntu'
