@@ -197,7 +197,7 @@
 - name: Set permissions on private key
   file:
     path: "{{ datahub.repo_dir }}/repo/config/jwt/private.pem"
-    mode: '0600'
+    mode: '0644'
     owner: "{{ application_user }}"
     group: "{{ application_user }}"
 
