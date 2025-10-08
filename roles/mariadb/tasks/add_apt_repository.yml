@@ -1,22 +1,29 @@
 ---
+- name: Ensure keyrings directory exists
+  file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+
+- name: Download MariaDB signing key
+  get_url:
+    url: https://mariadb.org/mariadb_release_signing_key.asc
+    dest: /etc/apt/keyrings/mariadb.asc
+    mode: '0644'
+
 - name: Determine distribution codename
   set_fact:
     distro_codename: "{{ ansible_facts.lsb.codename | default(ansible_facts.os_release.codename, true) }}"
 
 - name: Set MariaDB APT repository URL for Debian
   set_fact:
-    mariadb_apt_repository: "deb [arch=amd64,arm64,ppc64el] http://ams2.mirrors.digitalocean.com/mariadb/repo/{{ mariadb_version }}/debian {{ distro_codename }} main"
+    mariadb_apt_repository: "deb [arch=amd64,arm64,ppc64el signed-by=/etc/apt/keyrings/mariadb.asc] http://ams2.mirrors.digitalocean.com/mariadb/repo/{{ mariadb_version }}/debian {{ distro_codename }} main"
   when: ansible_facts.distribution == 'Debian'
 
 - name: Set MariaDB APT repository URL for Ubuntu
   set_fact:
-    mariadb_apt_repository: "deb [arch=amd64,arm64,ppc64el] http://ams2.mirrors.digitalocean.com/mariadb/repo/{{ mariadb_version }}/ubuntu {{ distro_codename }} main"
+    mariadb_apt_repository: "deb [arch=amd64,arm64,ppc64el signed-by=/etc/apt/keyrings/mariadb.asc] http://ams2.mirrors.digitalocean.com/mariadb/repo/{{ mariadb_version }}/ubuntu {{ distro_codename }} main"
   when: ansible_facts.distribution == 'Ubuntu'
-
-- name: Add MariaDB signing key
-  apt_key:
-    url: https://mariadb.org/mariadb_release_signing_key.asc
-    state: present
 
 - name: Add MariaDB APT repository
   apt_repository:
