@@ -5,21 +5,32 @@
 
 - name: Set MariaDB APT repository URL for Debian
   set_fact:
-    mariadb_apt_repository: "deb [arch=amd64,arm64,ppc64el] http://ams2.mirrors.digitalocean.com/mariadb/repo/{{ mariadb_version }}/debian {{ distro_codename }} main"
+    mariadb_apt_repository: "deb [arch=amd64,arm64,ppc64el signed-by=/etc/apt/keyrings/mariadb.gpg] http://mirror.mariadb.org/repo/{{ mariadb_version }}/debian {{ distro_codename }} main"
   when: ansible_facts.distribution == 'Debian'
 
 - name: Set MariaDB APT repository URL for Ubuntu
   set_fact:
-    mariadb_apt_repository: "deb [arch=amd64,arm64,ppc64el] http://ams2.mirrors.digitalocean.com/mariadb/repo/{{ mariadb_version }}/ubuntu {{ distro_codename }} main"
+    mariadb_apt_repository: "deb [arch=amd64,arm64,ppc64el signed-by=/etc/apt/keyrings/mariadb.gpg] http://mirror.mariadb.org/repo/{{ mariadb_version }}/ubuntu {{ distro_codename }} main"
   when: ansible_facts.distribution == 'Ubuntu'
 
-- name: Add MariaDB signing key
-  apt_key:
+- name: Ensure keyrings directory exists
+  file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+
+- name: Download MariaDB signing key (new method)
+  get_url:
     url: https://mariadb.org/mariadb_release_signing_key.asc
-    state: present
+    dest: /etc/apt/keyrings/mariadb.gpg
+    mode: '0644'
 
 - name: Add MariaDB APT repository
   apt_repository:
     repo: "{{ mariadb_apt_repository }}"
     state: present
     filename: "mariadb"
+
+- name: Update apt cache
+  apt:
+    update_cache: yes
