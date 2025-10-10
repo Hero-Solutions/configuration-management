@@ -4,7 +4,7 @@ cron_dir: /opt
 cron_name: arthub
 is_resourcespace: false
 is_cantaloupe: false
-mariadb_version: 10.5
+mariadb_version: 12.1.1
 mongodb_version: 4.4
 php:
   version: 8.4
