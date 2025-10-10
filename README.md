@@ -22,7 +22,7 @@ $tempdir = tmp_dir_location; # tmp_dir_location can be /opt/tmp/ for example (mu
 
 To use this Ansible playbook for an installation of the Flemish Art Collection's ecosystem, you need to have a controller (could be either a PC or server) with the following packages installed:
 
-* Ansible >= 2.9
+* Ansible >= 2.10
 * python-bcrypt
 * python-passlib
 * python-argcomplete (activate this by running the command `activate-global-python-argcomplete` as root user)
