@@ -14,7 +14,7 @@
 - name: Install pymongo
   pip:
     name:
-      - pymongo
+      - pymongo>=4.0
     break_system_packages: yes
 
 - name: Setup MongoDB root user
