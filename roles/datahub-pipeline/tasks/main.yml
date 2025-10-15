@@ -152,25 +152,25 @@
 
 - name: Provide additional crontab entry/entries to download IIIF manifest sqlite databas(es) from relevant imagehub(s)
   set_fact:
-    cronjobs: "{{ cronjobs + [ '{{ item}}' ] }}"
+    cronjobs: "{{ cronjobs + [ item ] }}"
   with_items: "{{ datahub_pipeline.imagehub_cronjobs }}"
 
 - name: Provide crontab entry for daily reload of datahub records (no output file, not verbose)
   set_fact:
-    cronjobs: "{{ cronjobs + [ 'PERL5LIB=~{{ application_user }}/perl5/lib/perl5/ ~{{ application_user }}/perl5/bin/dhconveyor transport -p {{ datahub_pipeline.dir }}/datahub.ini -L1' ] }}"
+    cronjobs: "{{ cronjobs + [ 'PERL5LIB=' ~ application_user ~ '/perl5/lib/perl5/' ~ application_user ~ '/perl5/bin/dhconveyor transport -p ' ~ datahub_pipeline.dir ~ '/datahub.ini -L1' ] }}"
   when: datahub_pipeline.output_file | length == 0 and not datahub_pipeline.output_verbose
 
 - name: Provide crontab entry for daily reload of datahub records (no output file, verbose)
   set_fact:
-    cronjobs: "{{ cronjobs + [ 'PERL5LIB=~{{ application_user }}/perl5/lib/perl5/ ~{{ application_user }}/perl5/bin/dhconveyor transport -p {{ datahub_pipeline.dir }}/datahub.ini -v -L1' ] }}"
+    cronjobs: "{{ cronjobs + [ 'PERL5LIB=~' ~ application_user ~ '/perl5/lib/perl5/' ~ application_user ~ '/perl5/bin/dhconveyor transport -p ' ~ datahub_pipeline.dir ~ '/datahub.ini -v -L1' ] }}"
   when: datahub_pipeline.output_file | length == 0 and datahub_pipeline.output_verbose
 
 - name: Provide crontab entry for daily reload of datahub records (output file, not verbose)
   set_fact:
-    cronjobs: "{{ cronjobs + [ 'PERL5LIB=~{{ application_user }}/perl5/lib/perl5/ script -q -c \"~{{ application_user }}/perl5/bin/dhconveyor transport -p {{ datahub_pipeline.dir }}/datahub.ini -L1\" > {{ datahub_pipeline.output_file }}' ] }}"
+    cronjobs: "{{ cronjobs + [ 'PERL5LIB=' ~ application_user ~ '/perl5/lib/perl5/ script -q -c \"' ~ application_user ~ '/perl5/bin/dhconveyor transport -p ' ~ datahub_pipeline.dir ~ '/datahub.ini -L1\" > ' ~ datahub_pipeline.output_file ] }}"
   when: datahub_pipeline.output_file | length > 0 and not datahub_pipeline.output_verbose
 
 - name: Provide crontab entry for daily reload of datahub records (output file, verbose)
   set_fact:
-    cronjobs: "{{ cronjobs + [ 'PERL5LIB=~{{ application_user }}/perl5/lib/perl5/ script -q -c \"~{{ application_user }}/perl5/bin/dhconveyor transport -p {{ datahub_pipeline.dir }}/datahub.ini -v -L1\" > {{ datahub_pipeline.output_file }}' ] }}"
+    cronjobs: "{{ cronjobs + [ 'PERL5LIB=' ~ application_user ~ '/perl5/lib/perl5/ script -q -c \"' ~ application_user ~ '/perl5/bin/dhconveyor transport -p ' ~ datahub_pipeline.dir ~ '/datahub.ini -v -L1\" > ' ~ datahub_pipeline.output_file ] }}"
   when: datahub_pipeline.output_file | length > 0 and datahub_pipeline.output_verbose

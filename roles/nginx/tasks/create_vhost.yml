@@ -20,7 +20,7 @@
 
 - name: Add domain to LetsEncrypt array to request SSL certificates
   set_fact:
-    letsencrypt_vhosts: "{{ letsencrypt_vhosts + [ {{ vhost }} ] }}"
+    letsencrypt_vhosts: "{{ letsencrypt_vhosts + [ vhost ] }}"
   when: vhost.ssl | length == 0 and stat_result.stat.exists
 
 - name: Append key and chain location to vhost
@@ -100,5 +100,5 @@
 
 - name: Add domain to LetsEncrypt array to request SSL certificates at the end of the play
   set_fact:
-    letsencrypt_vhosts: "{{ letsencrypt_vhosts + [ {{ vhost }} ] }}"
+    letsencrypt_vhosts: "{{ letsencrypt_vhosts + [ vhost ] }}"
   when: vhost.ssl | length == 0

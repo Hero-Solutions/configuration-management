@@ -115,7 +115,7 @@
 
 - name: Provide crontab entry for daily reload of dashboard records
   set_fact:
-    cronjobs: "{{ cronjobs }} + [ 'php {{ datahub_dashboard.dir }}/bin/console app:fetch-data' ]"
+    cronjobs: "{{ cronjobs + [ 'php ' ~ datahub_dashboard.dir ~ '/bin/console app:fetch-data' ] }}"
 
 - name: Set up datahub dashboard php-fpm pool
   include_role:

@@ -43,4 +43,4 @@
 
 - name: Set up cron task for daily reload of nginx culturize redirect file
   set_fact:
-    root_cronjobs: "{{ root_cronjobs }} + [ 'php {{ culturize.dir }}/update_culturize.php', 'systemctl reload nginx' ]"
+    root_cronjobs: "{{ root_cronjobs + [ 'php ' ~  culturize.dir ~ '/update_culturize.php', 'systemctl reload nginx' ] }}"
