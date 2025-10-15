@@ -10,7 +10,6 @@
 - name: Flush handlers
   meta: flush_handlers
 
-# Ansible mongodb_user is not (yet) compatible with pymongo 4.* so we have to hardcode version 3.12.2 for it to work
 - name: Install pymongo
   pip:
     name:

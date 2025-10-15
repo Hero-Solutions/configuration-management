@@ -219,7 +219,7 @@
 
 - name: Provide crontab entry for daily reload of arthub records
   set_fact:
-    cronjobs: "{{ cronjobs }} + [ '{{ item }}' ]"
+    cronjobs: "{{ cronjobs + [ '{{ item }}' ] }}"
   with_items:
     - "(cd {{ datahub_pipeline.dir }}/fixes/scripts; PERL5LIB=~{{ application_user }}/perl5/lib/perl5/ PATH=~{{ application_user }}/perl5/bin/:$PATH {{ datahub_pipeline.dir }}/fixes/scripts/{{ arthub.fix_script }} -e http://{{ datahub.nginx.server_name }}/oai -l nl)"
     - "(cd {{ datahub_pipeline.dir }}/fixes/scripts; PERL5LIB=~{{ application_user }}/perl5/lib/perl5/ PATH=~{{ application_user }}/perl5/bin/:$PATH {{ datahub_pipeline.dir }}/fixes/scripts/{{ arthub.fix_script }} -e http://{{ datahub.nginx.server_name }}/oai -l en)"
