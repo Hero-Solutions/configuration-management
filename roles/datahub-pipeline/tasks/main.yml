@@ -65,6 +65,9 @@
   cpanm:
     name: Catmandu
   become_user: "{{ application_user }}"
+  environment:
+    PERL5LIB: "{{ application_user_homedir }}/perl5/lib/perl5"
+    PATH: "{{ application_user_homedir }}/perl5/bin:{{ ansible_env.PATH }}"
 
 # Install without tests due to Catmandu::XML LibXSLT bug: https://rt.cpan.org/Public/Bug/Display.html?id=131156
 - name: Install Catmandu::XML
@@ -72,6 +75,9 @@
     name: Catmandu::XML
     notest: true
   become_user: "{{ application_user }}"
+  environment:
+    PERL5LIB: "{{ application_user_homedir }}/perl5/lib/perl5"
+    PATH: "{{ application_user_homedir }}/perl5/bin:{{ ansible_env.PATH }}"
 
 # Also install without tests
 - name: Install XML::Easy
@@ -79,6 +85,9 @@
     name: XML::Easy
     notest: true
   become_user: "{{ application_user }}"
+  environment:
+    PERL5LIB: "{{ application_user_homedir }}/perl5/lib/perl5"
+    PATH: "{{ application_user_homedir }}/perl5/bin:{{ ansible_env.PATH }}"
 
 - name: Install additional pipeline dependencies
   cpanm:
@@ -91,6 +100,9 @@
     - Datahub::Factory::Importer::EIZ
     - Datahub::Factory::Exporter
   become_user: "{{ application_user }}"
+  environment:
+    PERL5LIB: "{{ application_user_homedir }}/perl5/lib/perl5"
+    PATH: "{{ application_user_homedir }}/perl5/bin:{{ ansible_env.PATH }}"
 
 - name: Create datahub-pipeline folder
   file:
