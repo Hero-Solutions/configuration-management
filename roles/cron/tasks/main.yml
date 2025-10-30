@@ -19,7 +19,7 @@
 
 - name: Add additional cronjobs at the end if needed
   set_fact:
-    cronjobs: "{{ cronjobs }} + {{ final_cronjobs }}"
+    cronjobs: "{{ cronjobs + final_cronjobs }}"
 
 - name: Create shell script for cron task
   template:
@@ -74,7 +74,6 @@
     src: cronjobs.sh
     dest: "{{ cron_dir }}/cron/check_arthub.sh"
     mode: '755'
-  with_items: "{{ cronjobs }}"
   when: is_arthub is defined and is_arthub
 
 - name: Provide crontab entry to check for failure and restart when needed
