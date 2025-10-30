@@ -48,6 +48,8 @@
       - libexpat1
       - libexpat1-dev
       - libcrypt-ssleay-perl
+      - libsqlite3-dev
+      - perl-modules
 
 - name: Install libmysqlclient-dev if Ubuntu
   apt:
@@ -103,6 +105,38 @@
   environment:
     PERL5LIB: "{{ application_user_homedir }}/perl5/lib/perl5"
     PATH: "{{ application_user_homedir }}/perl5/bin:{{ ansible_env.PATH }}"
+
+- name: Check if LIDO_1_0 directory exists
+  stat:
+    path: "{{ application_user_homedir }}/perl5/lib/perl5/Lido/XML/LIDO_1_0"
+  register: lido_dir
+
+- name: Check if backup already exists
+  stat:
+    path: "{{ application_user_homedir }}/perl5/lib/perl5/Lido/XML/LIDO_1_0/lido_v1_old.pm"
+  register: lido_backup
+  when: lido_dir.stat.exists
+
+- name: Backup existing lido_v1.pm if present and no backup exists
+  command: mv lido_v1.pm lido_v1_old.pm
+  args:
+    chdir: "{{ application_user_homedir }}/perl5/lib/perl5/Lido/XML/LIDO_1_0"
+    removes: "{{ application_user_homedir }}/perl5/lib/perl5/Lido/XML/LIDO_1_0/lido_v1.pm"
+  become_user: "{{ application_user }}"
+  when:
+    - lido_dir.stat.exists
+    - not lido_backup.stat.exists
+
+- name: Copy new lido_v1.pm if directory exists and no backup yet
+  copy:
+    src: lido_v1.pm
+    dest: "{{ application_user_homedir }}/perl5/lib/perl5/Lido/XML/LIDO_1_0/lido_v1.pm"
+    owner: "{{ application_user }}"
+    group: "{{ application_user }}"
+    mode: "0644"
+  when:
+    - lido_dir.stat.exists
+    - not lido_backup.stat.exists
 
 - name: Create datahub-pipeline folder
   file:
