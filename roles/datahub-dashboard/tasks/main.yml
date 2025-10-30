@@ -44,7 +44,7 @@
     group: "{{ php.group }}"
   with_items:
     - cache
-    - logs
+    - log
     - sessions
     - vendor
 
@@ -54,7 +54,7 @@
     state: absent
   with_items:
     - var/cache
-    - var/logs
+    - var/log
     - var/sessions
     - vendor
   become_user: "{{ application_user }}"
@@ -68,8 +68,8 @@
   with_items:
     - src: cache
       dest: var/cache
-    - src: logs
-      dest: var/logs
+    - src: log
+      dest: var/log
     - src: sessions
       dest: var/sessions
     - src: vendor
@@ -100,7 +100,7 @@
     chdir: "{{ datahub_dashboard.dir }}"
   become_user: "{{ application_user }}"
 
-- name: Chown cache, logs and sessions folders
+- name: Chown cache, log and sessions folders
   file:
     path: "{{ datahub_dashboard.repo_dir }}/shared/{{ item }}/"
     state: directory
@@ -110,7 +110,7 @@
     group: "{{ php.group }}"
   with_items:
     - cache
-    - logs
+    - log
     - sessions
 
 - name: Provide crontab entry for daily reload of dashboard records

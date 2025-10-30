@@ -115,7 +115,7 @@
     recurse: true
   with_items:
     - cache
-    - logs
+    - log
     - vendor
   become_user: "{{ application_user }}"
 
@@ -125,7 +125,7 @@
     state: absent
   with_items:
     - cache
-    - logs
+    - log
     - vendor
   become_user: "{{ application_user }}"
 
@@ -137,7 +137,7 @@
     force: true
   with_items:
     - cache
-    - logs
+    - log
     - vendor
   become_user: "{{ application_user }}"
 
@@ -175,7 +175,7 @@
     chdir: "{{ datahub.dir }}"
   become_user: "{{ application_user }}"
 
-- name: Chown cache and logs folders
+- name: Chown cache and log folders
   file:
     path: "{{ datahub.repo_dir }}/shared/{{ item }}/"
     state: directory
@@ -184,7 +184,7 @@
     group: "{{ php.group }}"
   with_items:
     - cache
-    - logs
+    - log
 
 - name: Ensure JWT key directory exists
   file:
