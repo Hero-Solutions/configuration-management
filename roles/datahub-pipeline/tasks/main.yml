@@ -82,19 +82,11 @@
     PATH: "{{ application_user_homedir }}/perl5/bin:{{ ansible_env.PATH }}"
 
 # Also install without tests
-- name: Install XML::Easy
-  cpanm:
-    name: XML::Easy
-    notest: true
-  become_user: "{{ application_user }}"
-  environment:
-    PERL5LIB: "{{ application_user_homedir }}/perl5/lib/perl5"
-    PATH: "{{ application_user_homedir }}/perl5/bin:{{ ansible_env.PATH }}"
-
 - name: Install additional pipeline dependencies
   cpanm:
     name: "{{ item }}"
   with_items:
+    - XML::Easy
     - Catmandu::OAI
     - Datahub::Factory
     - Datahub::Factory::Cmd
