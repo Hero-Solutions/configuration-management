@@ -70,7 +70,7 @@
       - default-libmysqlclient-dev
   when: ansible_facts.distribution == 'Debian'
 
-# Also install without tests
+# Install without tests
 - name: Install additional pipeline dependencies
   cpanm:
     name: "{{ item }}"
