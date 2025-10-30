@@ -50,6 +50,13 @@
       - libcrypt-ssleay-perl
       - libsqlite3-dev
       - perl-modules
+      - libdbd-sqlite3-perl
+      - libcatmandu-perl
+      - libcatmandu-aat-perl
+      - libcatmandu-xml-perl
+      - libxml-easy-perl
+      - libcatmandu-oai-perl
+      - libcatmandu-viaf-perl
 
 - name: Install libmysqlclient-dev if Ubuntu
   apt:
@@ -63,34 +70,13 @@
       - default-libmysqlclient-dev
   when: ansible_facts.distribution == 'Debian'
 
-- name: Install Catmandu
-  cpanm:
-    name: Catmandu
-  become_user: "{{ application_user }}"
-  environment:
-    PERL5LIB: "{{ application_user_homedir }}/perl5/lib/perl5"
-    PATH: "{{ application_user_homedir }}/perl5/bin:{{ ansible_env.PATH }}"
-
-# Install without tests due to Catmandu::XML LibXSLT bug: https://rt.cpan.org/Public/Bug/Display.html?id=131156
-- name: Install Catmandu::XML
-  cpanm:
-    name: Catmandu::XML
-    notest: true
-  become_user: "{{ application_user }}"
-  environment:
-    PERL5LIB: "{{ application_user_homedir }}/perl5/lib/perl5"
-    PATH: "{{ application_user_homedir }}/perl5/bin:{{ ansible_env.PATH }}"
-
 # Also install without tests
 - name: Install additional pipeline dependencies
   cpanm:
     name: "{{ item }}"
   with_items:
-    - XML::Easy
-    - Catmandu::OAI
     - Datahub::Factory
     - Datahub::Factory::Cmd
-    - DBD::SQLite
     - Datahub::Factory::Importer::EIZ
     - Datahub::Factory::Exporter
   become_user: "{{ application_user }}"
