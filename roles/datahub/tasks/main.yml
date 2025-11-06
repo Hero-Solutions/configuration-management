@@ -121,7 +121,7 @@
 
 - name: Delete existing shared folders
   file:
-    path: "{{ datahub.repo_dir }}/repo/app/{{ item }}"
+    path: "{{ datahub.repo_dir }}/repo/var/{{ item }}"
     state: absent
   with_items:
     - cache
@@ -132,7 +132,7 @@
 - name: Link shared folders
   file:
     src: "{{ datahub.repo_dir }}/shared/{{ item }}"
-    dest: "{{ datahub.repo_dir }}/repo/app/{{ item }}"
+    dest: "{{ datahub.repo_dir }}/repo/var/{{ item }}"
     state: link
     force: true
   with_items:
@@ -144,20 +144,20 @@
 - name: Copy parameters.yml for datahub
   template:
     src: parameters.yml
-    dest: "{{ datahub.repo_dir }}/repo/app/config/parameters.yml"
+    dest: "{{ datahub.repo_dir }}/repo/config/parameters.yml"
   become_user: "{{ application_user }}"
 
 - name: Copy config_dev.yml for datahub
   template:
     src: config_dev.yml
-    dest: "{{ datahub.repo_dir }}/repo/app/config/config_dev.yml"
+    dest: "{{ datahub.repo_dir }}/repo/config/config_dev.yml"
   become_user: "{{ application_user }}"
   when: datahub.environment != 'production'
 
 - name: Copy config_prod.yml for datahub
   template:
     src: config_prod.yml
-    dest: "{{ datahub.repo_dir }}/repo/app/config/config_prod.yml"
+    dest: "{{ datahub.repo_dir }}/repo/config/config_prod.yml"
   become_user: "{{ application_user }}"
   when: datahub.environment == 'production'
 
