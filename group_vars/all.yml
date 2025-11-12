@@ -60,8 +60,8 @@ datahub_pipeline:
   eiz:
     url: https://cjm-web.adlibhosting.com/arthubflanders/oai.ashx
     set: vkc
-  output_file: ''
-  output_verbose: false
+  output_file: /opt/datahub-pipeline/output.txt
+  output_verbose: true
   institutions:
     - name: Museum voor Schone Kunsten Gent
       shorthand: MSK
