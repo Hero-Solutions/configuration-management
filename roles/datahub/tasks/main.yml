@@ -176,7 +176,7 @@
   file:
     path: "{{ datahub.repo_dir }}/repo/config/jwt"
     state: directory
-    mode: '0750'
+    mode: '0755'
     owner: "{{ application_user }}"
     group: "{{ application_user }}"
 
