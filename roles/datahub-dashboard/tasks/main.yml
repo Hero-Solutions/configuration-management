@@ -95,7 +95,7 @@
     state: link
 
 - name: Install datahub dashboard through composer
-  command: /usr/bin/composer install
+  command: composer install
   args:
     chdir: "{{ datahub_dashboard.dir }}"
   become_user: "{{ application_user }}"

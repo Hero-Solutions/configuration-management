@@ -141,6 +141,12 @@
     - vendor
   become_user: "{{ application_user }}"
 
+- name: Copy .env for datahub (Symfony 7+)
+  template:
+    src: .env
+    dest: "{{ datahub.repo_dir }}/repo/.env"
+  become_user: "{{ application_user }}"
+
 - name: Link datahub repo
   file:
     src: "{{ datahub.repo_dir }}/repo/"
@@ -150,7 +156,7 @@
     group: "{{ application_user }}"
 
 - name: Install datahub through composer
-  command: /usr/bin/composer install
+  command: composer install
   args:
     chdir: "{{ datahub.dir }}"
   become_user: "{{ application_user }}"
