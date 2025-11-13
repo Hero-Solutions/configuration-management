@@ -48,11 +48,11 @@
     datahub:
       repo_dir: "{{ datahub.repo_dir | regex_replace('\\/$', '') }}"
       secret_token: "{{ lookup('password', '/dev/null chars=ascii_lowercase,digits length=32') }}"
-      oauth:
-        mongodb_consumer_id: "{{ mongodb_consumer_id_string.stdout | regex_replace('^.*ObjectId.\"(.*)\".*$', '\\1') }}"
-        client_id: "{{ lookup('password', '/dev/null chars=ascii_lowercase,digits length=50') }}"
-        secret: "{{ lookup('password', '/dev/null chars=ascii_lowercase,digits length=50') }}"
-        external_id: "{{ lookup('password', '/dev/null chars=hexdigits length=6') | lower }}"
+    datahub.oauth:
+      mongodb_consumer_id: "{{ mongodb_consumer_id_string.stdout | regex_replace('^.*ObjectId.\"(.*)\".*$', '\\1') }}"
+      client_id: "{{ lookup('password', '/dev/null chars=ascii_lowercase,digits length=50') }}"
+      secret: "{{ lookup('password', '/dev/null chars=ascii_lowercase,digits length=50') }}"
+      external_id: "{{ lookup('password', '/dev/null chars=hexdigits length=6') | lower }}"
   when: mongodb_oauth_client_exists.stdout | length == 0
 
 - name: Insert OAuth client into MongoDB
