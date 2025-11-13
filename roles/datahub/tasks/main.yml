@@ -141,26 +141,6 @@
     - vendor
   become_user: "{{ application_user }}"
 
-- name: Copy parameters.yml for datahub
-  template:
-    src: parameters.yml
-    dest: "{{ datahub.repo_dir }}/repo/config/parameters.yml"
-  become_user: "{{ application_user }}"
-
-- name: Copy config_dev.yml for datahub
-  template:
-    src: config_dev.yml
-    dest: "{{ datahub.repo_dir }}/repo/config/config_dev.yml"
-  become_user: "{{ application_user }}"
-  when: datahub.environment != 'production'
-
-- name: Copy config_prod.yml for datahub
-  template:
-    src: config_prod.yml
-    dest: "{{ datahub.repo_dir }}/repo/config/config_prod.yml"
-  become_user: "{{ application_user }}"
-  when: datahub.environment == 'production'
-
 - name: Link datahub repo
   file:
     src: "{{ datahub.repo_dir }}/repo/"
@@ -194,13 +174,13 @@
     owner: "{{ application_user }}"
     group: "{{ application_user }}"
 
-- name: Generate private key if not exists
-  command: "openssl genpkey -algorithm RSA -out {{ datahub.repo_dir }}/repo/config/jwt/private.pem -pkeyopt rsa_keygen_bits:4096"
+- name: Generate encrypted private key if not exists
+  command: "openssl genpkey -algorithm RSA -aes-256-cbc -pass pass:{{ datahub.oauth.passphrase }} -out {{ datahub.repo_dir }}/repo/config/jwt/private.pem -pkeyopt rsa_keygen_bits:4096"
   args:
     creates: "{{ datahub.repo_dir }}/repo/config/jwt/private.pem"
 
 - name: Generate public key from private key
-  command: "openssl rsa -pubout -in {{ datahub.repo_dir }}/repo/config/jwt/private.pem -out {{ datahub.repo_dir }}/repo/config/jwt/public.pem"
+  command: "openssl pkey -in {{ datahub.repo_dir }}/repo/config/jwt/private.pem -passin pass:{{ datahub.oauth.passphrase }} -pubout -out {{ datahub.repo_dir }}/repo/config/jwt/public.pem"
   args:
     creates: "{{ datahub.repo_dir }}/repo/config/jwt/public.pem"
 
