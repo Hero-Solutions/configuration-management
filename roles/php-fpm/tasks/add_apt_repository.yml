@@ -1,22 +1,53 @@
 ---
+- name: Ensure prerequisites for adding external apt repos
+  apt:
+    name:
+      - gnupg
+      - ca-certificates
+      - wget
+    state: present
+    update_cache: yes
+
 - name: Determine distribution codename
   set_fact:
     distro_codename: "{{ ansible_facts.lsb.codename | default(ansible_facts.os_release.codename, true) }}"
 
-- name: Add Sury PHP signing key for Debian
-  apt_key:
+- name: Create keyrings dir
+  file:
+    path: /usr/share/keyrings
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Download Sury apt.gpg to temporary location
+  ansible.builtin.get_url:
     url: "https://packages.sury.org/php/apt.gpg"
+    dest: /tmp/sury-apt.gpg
+    mode: '0644'
+    force: yes
+
+- name: Convert ASCII/armored key to binary keyring and put into /usr/share/keyrings
+  ansible.builtin.command: gpg --dearmor --yes --output /usr/share/keyrings/debsuryorg-archive-keyring.gpg /tmp/sury-apt.gpg
+  args:
+    creates: /usr/share/keyrings/debsuryorg-archive-keyring.gpg
+
+- name: Ensure proper permissions on keyring
+  file:
+    path: /usr/share/keyrings/debsuryorg-archive-keyring.gpg
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Add Sury PHP APT repository (Debian) using signed-by
+  apt_repository:
+    repo: "deb [signed-by=/usr/share/keyrings/debsuryorg-archive-keyring.gpg] https://packages.sury.org/php/ {{ distro_codename }} main"
+    filename: debsury-php
     state: present
+    update_cache: yes
   when: ansible_facts.distribution == 'Debian'
 
-- name: Add Sury PHP APT repository for Debian
-  apt_repository:
-    repo: "deb https://packages.sury.org/php/ {{ distro_codename }} main"
-    state: present
-  when: ansible_facts.distribution == 'Debian'
-
-- name: Add Ondrej PHP PPA for Ubuntu
-  apt_repository:
-    repo: "ppa:ondrej/php"
-    state: present
-  when: ansible_facts.distribution == 'Ubuntu'
+- name: Remove temporary downloaded key
+  file:
+    path: /tmp/sury-apt.gpg
+    state: absent
