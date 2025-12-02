@@ -80,14 +80,22 @@
 
 - name: Create DBD::mysql compatibility symlink
   file:
-    src: "{{ application_user_homedir }}/perl5/lib/perl5/DBD/MariaDB.pm"
-    dest: "{{ application_user_homedir }}/perl5/lib/perl5/DBD/mysql.pm"
+    src: "{{ application_user_homedir }}/perl5/lib/perl5/x86_64-linux-gnu-thread-multi/DBD/MariaDB.pm"
+    dest: "{{ application_user_homedir }}/perl5/lib/perl5/x86_64-linux-gnu-thread-multi/DBD/mysql.pm"
     state: link
+    force: true
 
 - name: Symlink auto/DBD/mysql to auto/DBD/MariaDB
   file:
     src: "{{ application_user_homedir }}/perl5/lib/perl5/x86_64-linux-gnu-thread-multi/auto/DBD/MariaDB"
     dest: "{{ application_user_homedir }}/perl5/lib/perl5/x86_64-linux-gnu-thread-multi/auto/DBD/mysql"
+    state: link
+    force: true
+
+- name: Provide mysql_config compatibility
+  file:
+    src: /usr/bin/mariadb_config
+    dest: /usr/local/bin/mysql_config
     state: link
 
 # Install without tests
