@@ -129,6 +129,12 @@
     - vendor
   become_user: "{{ application_user }}"
 
+- name: Ensure var directory exists
+  file:
+    path: "{{ datahub.repo_dir }}/repo/var"
+    state: directory
+  become_user: "{{ application_user }}"
+
 - name: Link shared folders
   file:
     src: "{{ datahub.repo_dir }}/shared/{{ item }}"
