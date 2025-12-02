@@ -58,17 +58,17 @@
       - libcatmandu-oai-perl
       - libcatmandu-viaf-perl
 
-- name: Install libmysqlclient-dev if Ubuntu
+- name: Install MySQL/MariaDB client development libraries
   apt:
-    name:
-      - libmysqlclient-dev
-  when: ansible_facts.distribution == 'Ubuntu'
-
-- name: Install default-libmysqlclient-dev if Debian
-  apt:
-    name:
-      - default-libmysqlclient-dev
-  when: ansible_facts.distribution == 'Debian'
+    name: "{{ mysql_dev_packages }}"
+    state: present
+    update_cache: true
+  vars:
+    mysql_dev_packages: >-
+      {{
+        ['default-libmysqlclient-dev'] if ansible_distribution == 'Ubuntu'
+        else ['libmariadb-dev', 'libmariadb-dev-compat']
+      }}
 
 # Install without tests
 - name: Install additional pipeline dependencies
