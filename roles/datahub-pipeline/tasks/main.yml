@@ -70,6 +70,26 @@
         else ['libmariadb-dev', 'libmariadb-dev-compat', 'mariadb-client-core']
       }}
 
+- name: Install Perl module DBD::MariaDB
+  cpanm:
+    name: DBD::MariaDB
+  become_user: "{{ application_user }}"
+  environment:
+    PERL5LIB: "{{ application_user_homedir }}/perl5/lib/perl5"
+    PATH: "{{ application_user_homedir }}/perl5/bin:{{ ansible_env.PATH }}"
+
+- name: Create DBD::mysql compatibility symlink
+  file:
+    src: "{{ application_user_homedir }}/perl5/lib/perl5/DBD/MariaDB.pm"
+    dest: "{{ application_user_homedir }}/perl5/lib/perl5/DBD/mysql.pm"
+    state: link
+
+- name: Symlink auto/DBD/mysql to auto/DBD/MariaDB
+  file:
+    src: "{{ application_user_homedir }}/perl5/lib/perl5/x86_64-linux-gnu-thread-multi/auto/DBD/MariaDB"
+    dest: "{{ application_user_homedir }}/perl5/lib/perl5/x86_64-linux-gnu-thread-multi/auto/DBD/mysql"
+    state: link
+
 # Install without tests
 - name: Install additional pipeline dependencies
   cpanm:
