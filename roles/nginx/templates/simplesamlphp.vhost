@@ -35,12 +35,25 @@ server {
     deny all;
   }
 
-  location ~ \.php$ {
-    try_files $uri =404;
+  location ~ \.php(/|$) {
+    # Split PATH_INFO so upload_batch.php/files/<UUID> works
+    fastcgi_split_path_info ^(.+\.php)(/.*)$;
+
+    # Try the actual PHP script, not the full URI (needed for TUS)
+    try_files $fastcgi_script_name =404;
+
     fastcgi_pass unix:/run/php/php{{ php.version }}-fpm-{{ vhost.php_socket_name }}.sock;
-    fastcgi_param SCRIPT_FILENAME  $document_root$fastcgi_script_name;
+    fastcgi_index index.php;
+
     include /etc/nginx/fastcgi_params;
+
+    # Correcte parameters voor PHP-FPM
+    fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+    fastcgi_param SCRIPT_NAME     $fastcgi_script_name;
+    fastcgi_param PATH_INFO       $fastcgi_path_info;
+
     fastcgi_read_timeout 300;
+
 {% if php.request_buffering != "on" %}
     fastcgi_request_buffering {{ php.request_buffering }};
 {% endif %}
