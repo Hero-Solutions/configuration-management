@@ -113,7 +113,7 @@ resourcespace:
   base_url: https://resourcespace.example.be
   rs_ptif:
     repo_url: https://github.com/Hero-Solutions/RS_ptif
-    branch: master
+    branch: rs_v10
     repo_dir: /opt/.repos/rs_ptif
   admin:
     full_name: Admin user
