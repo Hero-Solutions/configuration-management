@@ -92,11 +92,12 @@
     state: link
     force: true
 
-- name: Provide mysql_config compatibility
+- name: Provide mysql_config compatibility for Debian
   file:
     src: /usr/bin/mariadb_config
     dest: /usr/local/bin/mysql_config
     state: link
+  when: ansible_facts.distribution == 'Debian'
 
 # Install without tests
 - name: Install additional pipeline dependencies
