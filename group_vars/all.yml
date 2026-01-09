@@ -7,7 +7,7 @@ is_cantaloupe: false
 mariadb_version: 12.1.1
 mongodb_version: 4.4
 php:
-  version: 8.4
+  version: 8.5
   user: www-data
   group: www-data
   request_buffering: "on"
