@@ -73,6 +73,7 @@
 - name: Install Perl module DBD::MariaDB
   cpanm:
     name: DBD::MariaDB
+    locallib: "{{ application_user_homedir }}/perl5"
   become_user: "{{ application_user }}"
   environment:
     PERL5LIB: "{{ application_user_homedir }}/perl5/lib/perl5"
@@ -103,6 +104,7 @@
 - name: Install additional pipeline dependencies
   cpanm:
     name: "{{ item }}"
+    locallib: "{{ application_user_homedir }}/perl5"
   with_items:
     - Datahub::Factory
     - Datahub::Factory::Cmd
