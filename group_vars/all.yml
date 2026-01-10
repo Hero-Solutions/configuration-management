@@ -24,8 +24,8 @@ datahub:
     name: datahub
     configfile: datahub
     server_name: datahub.example.com
-    document_root: /opt/datahub/web
-    index: app.php
+    document_root: /opt/datahub/public
+    index: index.php
     redirect_to_https: true
     ssl : {}
   mongodb:
@@ -46,7 +46,7 @@ datahub:
 datahub_pipeline:
   dir: /opt/datahub-pipeline
   datahub_protocol: https
-  condition_path: _metadata.institution\\.name
+  condition_path: _metadata.institution\\.name.name
   fixes:
     repo_url: https://github.com/Hero-Solutions/Datahub-Fixes.git
     repo_dir: /opt/.repos/datahub-fixes
@@ -176,7 +176,7 @@ imagehub:
   manifest_languages:
     - en
     - nl
-  main_iiif_version: 2
+  main_iiif_version: 3
   placeholder_id: -1
   ftp_folder: /home/user/ftp/
   repo_url: https://github.com/Hero-Solutions/Imagehub.git
