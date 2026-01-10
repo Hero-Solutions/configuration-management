@@ -56,7 +56,6 @@
   with_items:
     - cache
     - log
-    - vendor
 
 - name: Delete existing shared folders
   file:
@@ -65,7 +64,6 @@
   with_items:
     - var/cache
     - var/log
-    - vendor
   become_user: "{{ application_user }}"
 
 - name: Make sure var folder exists in repo
@@ -87,8 +85,6 @@
       dest: var/cache
     - src: log
       dest: var/log
-    - src: vendor
-      dest: vendor
   become_user: "{{ application_user }}"
 
 - name: Copy .env for imagehub

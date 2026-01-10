@@ -45,8 +45,6 @@
   with_items:
     - cache
     - log
-    - sessions
-    - vendor
 
 - name: Delete existing shared folders
   file:
@@ -55,8 +53,6 @@
   with_items:
     - var/cache
     - var/log
-    - var/sessions
-    - vendor
   become_user: "{{ application_user }}"
 
 - name: Link shared folders
@@ -70,10 +66,6 @@
       dest: var/cache
     - src: log
       dest: var/log
-    - src: sessions
-      dest: var/sessions
-    - src: vendor
-      dest: vendor
   become_user: "{{ application_user }}"
 
 - name: Copy parameters.yml for datahub dashboard (older Symfony versions)
