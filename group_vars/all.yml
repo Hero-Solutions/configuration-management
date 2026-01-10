@@ -83,8 +83,8 @@ datahub_dashboard:
     name: datahub-dashboard
     configfile: datahub_dashboard
     server_name: dashboard.example.com
-    document_root: /opt/datahub-dashboard/web
-    index: app.php
+    document_root: /opt/datahub-dashboard/public
+    index: index.php
     redirect_to_https: true
     ssl: {}
   mongodb:
