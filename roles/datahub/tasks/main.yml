@@ -13,32 +13,32 @@
         db_password: "{{ datahub.mongodb.password }}"
 
 - name: Check if admin user exists in MongoDB
-  command: mongo --quiet --eval "db.Users.find({ 'username'{{ ':' }} '{{ datahub.admin.username }}' })" datahub
+  command: mongosh --quiet --eval "db.Users.find({ 'username'{{ ':' }} '{{ datahub.admin.username }}' })" datahub
   register: mongodb_admin_user_exists
   become_user: "{{ application_user }}"
 
 - name: Insert admin user into MongoDB
-  command: mongo --eval 'db.Users.insert({{ lookup("template", "./mongodb_admin_user.json") }})' datahub
+  command: mongosh --eval 'db.Users.insert({{ lookup("template", "./mongodb_admin_user.json") }})' datahub
   when: mongodb_admin_user_exists.stdout | length == 0
   become_user: "{{ application_user }}"
 
 - name: Check if consumer user exists in MongoDB
-  command: mongo --quiet --eval "db.Users.find({ 'username'{{ ':' }} '{{ datahub.consumer.username }}' })" datahub
+  command: mongosh --quiet --eval "db.Users.find({ 'username'{{ ':' }} '{{ datahub.consumer.username }}' })" datahub
   register: mongodb_consumer_user_exists
   become_user: "{{ application_user }}"
 
 - name: Insert consumer user into MongoDB
-  command: mongo --eval 'db.Users.insert({{ lookup("template", "./mongodb_consumer_user.json") }})' datahub
+  command: mongosh --eval 'db.Users.insert({{ lookup("template", "./mongodb_consumer_user.json") }})' datahub
   when: mongodb_consumer_user_exists.stdout | length == 0
   become_user: "{{ application_user }}"
 
 - name: Check if OAuth client exists
-  command: mongo --quiet --eval "db.Client.find({ 'applicationName' {{ ':' }} '{{ datahub.oauth.application_name }}' })" datahub
+  command: mongosh --quiet --eval "db.Client.find({ 'applicationName' {{ ':' }} '{{ datahub.oauth.application_name }}' })" datahub
   register: mongodb_oauth_client_exists
   become_user: "{{ application_user }}"
 
 - name: Fetch consumer _id from MongoDB
-  command: mongo --quiet --eval "db.Users.find({ 'username' {{ ':' }} '{{ datahub.consumer.username }}' }, { '_id' {{ ':' }} 1 })" datahub
+  command: mongosh --quiet --eval "db.Users.find({ 'username' {{ ':' }} '{{ datahub.consumer.username }}' }, { '_id' {{ ':' }} 1 })" datahub
   register: mongodb_consumer_id_string
   when: mongodb_oauth_client_exists.stdout | length == 0
   become_user: "{{ application_user }}"
@@ -56,7 +56,7 @@
   when: mongodb_oauth_client_exists.stdout | length == 0
 
 - name: Insert OAuth client into MongoDB
-  command: mongo --eval 'db.Client.insert({{ lookup("template", "./mongodb_oauth_client.json") }})' datahub
+  command: mongosh --eval 'db.Client.insert({{ lookup("template", "./mongodb_oauth_client.json") }})' datahub
   when: mongodb_oauth_client_exists.stdout | length == 0
   become_user: "{{ application_user }}"
 
