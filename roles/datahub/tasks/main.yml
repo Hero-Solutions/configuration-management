@@ -13,34 +13,35 @@
         db_password: "{{ datahub.mongodb.password }}"
 
 - name: Check if admin user exists in MongoDB
-  command: mongosh --quiet --eval "db.Users.find({ 'username'{{ ':' }} '{{ datahub.admin.username }}' })" datahub
+  command: mongosh --quiet --eval "db.Users.find({ 'username': '{{ datahub.admin.username }}' }).toArray()" datahub
   register: mongodb_admin_user_exists
   become_user: "{{ application_user }}"
 
 - name: Insert admin user into MongoDB
-  command: mongosh --eval 'db.Users.insert({{ lookup("template", "./mongodb_admin_user.json") }})' datahub
-  when: mongodb_admin_user_exists.stdout | length == 0
+  command: mongosh --eval 'db.Users.insertOne({{ lookup("template", "./mongodb_admin_user.json") }})' datahub
+  when: mongodb_admin_user_exists.stdout == "[]" or mongodb_admin_user_exists.stdout | length == 0
   become_user: "{{ application_user }}"
 
 - name: Check if consumer user exists in MongoDB
-  command: mongosh --quiet --eval "db.Users.find({ 'username'{{ ':' }} '{{ datahub.consumer.username }}' })" datahub
+  command: mongosh --quiet --eval "db.Users.find({ 'username': '{{ datahub.consumer.username }}' }).toArray()" datahub
   register: mongodb_consumer_user_exists
   become_user: "{{ application_user }}"
 
 - name: Insert consumer user into MongoDB
-  command: mongosh --eval 'db.Users.insert({{ lookup("template", "./mongodb_consumer_user.json") }})' datahub
-  when: mongodb_consumer_user_exists.stdout | length == 0
+  # Gebruik insertOne (modern) ipv insert (deprecated)
+  command: mongosh --eval 'db.Users.insertOne({{ lookup("template", "./mongodb_consumer_user.json") }})' datahub
+  when: mongodb_consumer_user_exists.stdout == "[]" or mongodb_consumer_user_exists.stdout | length == 0
   become_user: "{{ application_user }}"
 
 - name: Check if OAuth client exists
-  command: mongosh --quiet --eval "db.Client.find({ 'applicationName' {{ ':' }} '{{ datahub.oauth.application_name }}' })" datahub
+  command: mongosh --quiet --eval "db.Client.find({ 'applicationName': '{{ datahub.oauth.application_name }}' }).toArray()" datahub
   register: mongodb_oauth_client_exists
   become_user: "{{ application_user }}"
 
 - name: Fetch consumer _id from MongoDB
-  command: mongosh --quiet --eval "db.Users.find({ 'username' {{ ':' }} '{{ datahub.consumer.username }}' }, { '_id' {{ ':' }} 1 })" datahub
+  command: mongosh --quiet --json=canonical --eval "db.Users.find({ 'username': '{{ datahub.consumer.username }}' }, { '_id': 1 }).toArray()" datahub
   register: mongodb_consumer_id_string
-  when: mongodb_oauth_client_exists.stdout | length == 0
+  when: mongodb_oauth_client_exists.stdout == "[]" or mongodb_oauth_client_exists.stdout | length == 0
   become_user: "{{ application_user }}"
 
 - name: Store _id in a var, generate client_id, secret and external_id
@@ -49,15 +50,16 @@
       repo_dir: "{{ datahub.repo_dir | regex_replace('\\/$', '') }}"
       secret_token: "{{ lookup('password', '/dev/null chars=ascii_lowercase,digits length=32') }}"
       oauth:
-        mongodb_consumer_id: "{{ mongodb_consumer_id_string.stdout | regex_replace('^.*ObjectId.\"(.*)\".*$', '\\1') }}"
+        # De regex is aangepast om de EJSON "$oid" structuur te pakken
+        mongodb_consumer_id: "{{ mongodb_consumer_id_string.stdout | regex_search('\\$oid\":\"([a-f0-9]+)\"', '\\1') | first }}"
         client_id: "{{ lookup('password', '/dev/null chars=ascii_lowercase,digits length=50') }}"
         secret: "{{ lookup('password', '/dev/null chars=ascii_lowercase,digits length=50') }}"
         external_id: "{{ lookup('password', '/dev/null chars=hexdigits length=6') | lower }}"
-  when: mongodb_oauth_client_exists.stdout | length == 0
+  when: mongodb_oauth_client_exists.stdout == "[]" or mongodb_oauth_client_exists.stdout | length == 0
 
 - name: Insert OAuth client into MongoDB
-  command: mongosh --eval 'db.Client.insert({{ lookup("template", "./mongodb_oauth_client.json") }})' datahub
-  when: mongodb_oauth_client_exists.stdout | length == 0
+  command: mongosh --eval 'db.Client.insertOne({{ lookup("template", "./mongodb_oauth_client.json") }})' datahub
+  when: mongodb_oauth_client_exists.stdout == "[]" or mongodb_oauth_client_exists.stdout | length == 0
   become_user: "{{ application_user }}"
 
 - name: Fetch client_id to use in the datahub pipeline
@@ -66,9 +68,9 @@
     "db.Client.find(
       { 'applicationName': '{{ datahub.oauth.application_name }}' },
       { '_id': 0, 'randomId': 1 }
-    )" datahub
+    ).toArray()" datahub
   register: oauth_client_id_raw
-  when: mongodb_oauth_client_exists.stdout | length > 0
+  when: mongodb_oauth_client_exists.stdout != "[]" and mongodb_oauth_client_exists.stdout | length > 0
   become_user: "{{ application_user }}"
 
 - name: Fetch secret to use in the datahub pipeline
@@ -77,9 +79,9 @@
     "db.Client.find(
       { 'applicationName': '{{ datahub.oauth.application_name }}' },
       { '_id': 0, 'secret': 1 }
-    )" datahub
+    ).toArray()" datahub
   register: oauth_secret_raw
-  when: mongodb_oauth_client_exists.stdout | length > 0
+  when: mongodb_oauth_client_exists.stdout != "[]" and mongodb_oauth_client_exists.stdout | length > 0
   become_user: "{{ application_user }}"
 
 - name: Store client_id and secret in vars
@@ -88,9 +90,9 @@
       repo_dir: "{{ datahub.repo_dir | regex_replace('\\/$', '') }}"
       secret_token: "{{ lookup('password', '/dev/null chars=ascii_lowercase,digits length=32') }}"
       oauth:
-        client_id: "{{ (oauth_client_id_raw.stdout | regex_search('\"randomId\".*\"(.*?)\"', '\\1') | first) | default('') }}"
-        secret: "{{ (oauth_secret_raw.stdout | regex_search('\"secret\".*\"(.*?)\"', '\\1') | first) | default('') }}"
-  when: mongodb_oauth_client_exists.stdout | length > 0
+        client_id: "{{ oauth_client_id_raw.stdout | regex_search('\"randomId\":\"(.*?)\"', '\\1') | first | default('') }}"
+        secret: "{{ oauth_secret_raw.stdout | regex_search('\"secret\":\"(.*?)\"', '\\1') | first | default('') }}"
+  when: mongodb_oauth_client_exists.stdout != "[]" and mongodb_oauth_client_exists.stdout | length > 0
 
 - name: Create repo folder
   file: 
