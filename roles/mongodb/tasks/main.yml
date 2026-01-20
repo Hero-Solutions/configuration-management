@@ -2,24 +2,6 @@
 #- name: Add apt repository
 #  include_tasks: add_apt_repository.yml
 
-- name: Determine MongoDB repo codename
-  set_fact:
-    mongodb_repo_codename: >-
-      {{
-        (
-          'bookworm'
-          if ansible_distribution == 'Debian' and ansible_distribution_major_version in ['12','13']
-          else ansible_distribution_release
-          if ansible_distribution == 'Ubuntu'
-          else 'unsupported'
-        ) | trim
-      }}
-
-- name: Fail if distro is unsupported
-  fail:
-    msg: "Unsupported distribution for MongoDB: {{ ansible_distribution }} {{ ansible_distribution_version }}"
-  when: mongodb_repo_codename == "unsupported"
-
 - name: Install prerequisite packages
   apt:
     name:
@@ -30,34 +12,36 @@
     state: present
     update_cache: yes
 
-- name: Download MongoDB GPG key (ASCII)
-  ansible.builtin.get_url:
-    url: "https://www.mongodb.org/static/pgp/server-{{ mongodb_version }}.asc"
-    dest: /tmp/mongodb.asc
-    mode: '0644'
+- name: Fail on unsupported distribution
+  fail:
+    msg: "Unsupported distribution: {{ ansible_distribution }}"
+  when: ansible_distribution not in ["Debian", "Ubuntu"]
 
-- name: Convert MongoDB GPG key to binary keyring
-  ansible.builtin.command:
-    cmd: gpg --dearmor -o /usr/share/keyrings/mongodb.gpg /tmp/mongodb.asc
-    creates: /usr/share/keyrings/mongodb.gpg
-
-- name: Remove temporary MongoDB ASCII key
-  file:
-    path: /tmp/mongodb.asc
-    state: absent
-
-- name: Set MongoDB distro parameters
+- name: Set MongoDB repo parameters
   set_fact:
     mongodb_repo_base: "{{ 'debian' if ansible_distribution == 'Debian' else 'ubuntu' }}"
-    mongodb_repo_component: "{{ 'main' if ansible_distribution == 'Debian' else 'multiverse' }}"
+    mongodb_repo_codename: >-
+      {{
+        'bookworm'
+        if ansible_distribution == 'Debian'
+        else ansible_distribution_release
+      }}
+
+- name: Install MongoDB GPG key
+  shell: |
+    curl -fsSL https://pgp.mongodb.com/server-{{ mongodb_version }}.asc \
+    | gpg --dearmor -o /usr/share/keyrings/mongodb-server-{{ mongodb_version }}.gpg
+  args:
+    creates: "/usr/share/keyrings/mongodb-server-{{ mongodb_version }}.gpg"
 
 - name: Add MongoDB APT repository
   copy:
-    dest: /etc/apt/sources.list.d/mongodb.list
-    content: deb [arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb.gpg] https://repo.mongodb.org/apt/{{ mongodb_repo_base }} {{ mongodb_repo_codename }}/mongodb-org/{{ mongodb_version }} {{ mongodb_repo_component }}
+    dest: "/etc/apt/sources.list.d/mongodb-org-{{ mongodb_version }}.list"
     owner: root
     group: root
     mode: '0644'
+    content: |
+      deb [signed-by=/usr/share/keyrings/mongodb-server-{{ mongodb_version }}.gpg] https://repo.mongodb.org/apt/{{ mongodb_repo_base }} {{ mongodb_repo_codename }}/mongodb-org/{{ mongodb_version }} main
 
 - name: Update apt cache
   apt:
