@@ -41,13 +41,6 @@
     cmd: gpg --dearmor -o /usr/share/keyrings/mongodb.gpg /tmp/mongodb.asc
     creates: /usr/share/keyrings/mongodb.gpg
 
-- name: Fix permissions on MongoDB keyring (required for _apt)
-  ansible.builtin.file:
-    path: /usr/share/keyrings/mongodb.gpg
-    owner: root
-    group: root
-    mode: '0644'
-
 - name: Remove temporary MongoDB ASCII key
   file:
     path: /tmp/mongodb.asc
