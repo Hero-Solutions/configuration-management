@@ -1,7 +1,19 @@
 ---
-- name: Install openjdk-11-jre
+- name: Add Adoptium apt key
+  get_url:
+    url: https://packages.adoptium.net/artifactory/api/gpg/key/public
+    dest: /etc/apt/keyrings/adoptium.asc
+
+- name: Add Adoptium repository
+  apt_repository:
+    repo: "deb [signed-by=/etc/apt/keyrings/adoptium.asc] https://packages.adoptium.net/artifactory/deb trixie main"
+    state: present
+
+- name: Install openjdk-11 (Temurin)
   apt:
-    name: openjdk-11-jre
+    name: temurin-11-jre
+    state: present
+    update_cache: yes
 
 - name: Create cantaloupe folder
   file:
