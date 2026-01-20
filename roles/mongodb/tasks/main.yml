@@ -36,7 +36,7 @@
 
 - name: Add MongoDB APT repository
   copy:
-    dest: "/etc/apt/sources.list.d/mongodb-org-{{ mongodb_version }}.list"
+    dest: "/etc/apt/sources.list.d/mongodb.list"
     owner: root
     group: root
     mode: '0644'
