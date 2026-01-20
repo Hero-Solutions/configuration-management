@@ -97,14 +97,20 @@
   when: mongodb_oauth_client_exists.stdout != "[]" and mongodb_oauth_client_exists.stdout | length > 0
   become_user: "{{ application_user }}"
 
+- name: Debug MongoDB output before parsing
+  debug:
+    msg: 
+      - "Full ID Output: {{ oauth_client_id_raw.stdout }}"
+      - "Full Secret Output: {{ oauth_secret_raw.stdout }}"
+
 - name: Store client_id and secret in vars
   set_fact:
     datahub:
       repo_dir: "{{ datahub.repo_dir | regex_replace('\\/$', '') }}"
       secret_token: "{{ lookup('password', '/dev/null chars=ascii_lowercase,digits length=32') }}"
       oauth:
-        client_id: "{{ oauth_client_id_raw.stdout | regex_search('\"randomId\":\"(.*?)\"', '\\1') | first | default('') }}"
-        secret: "{{ oauth_secret_raw.stdout | regex_search('\"secret\":\"(.*?)\"', '\\1') | first | default('') }}"
+        client_id: "{{ (oauth_client_id_raw.stdout | from_json)[0].randomId | default('') }}"
+        secret: "{{ (oauth_secret_raw.stdout | from_json)[0].secret | default('') }}"
   when: mongodb_oauth_client_exists.stdout != "[]" and mongodb_oauth_client_exists.stdout | length > 0
 
 - name: Create repo folder
