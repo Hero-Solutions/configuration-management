@@ -30,11 +30,21 @@
     state: present
     update_cache: yes
 
-- name: Download MongoDB GPG key
+- name: Download MongoDB GPG key (ASCII)
   ansible.builtin.get_url:
     url: "https://www.mongodb.org/static/pgp/server-{{ mongodb_version }}.asc"
-    dest: /usr/share/keyrings/mongodb.gpg
+    dest: /tmp/mongodb.asc
     mode: '0644'
+
+- name: Convert MongoDB GPG key to binary keyring
+  ansible.builtin.command:
+    cmd: gpg --dearmor -o /usr/share/keyrings/mongodb.gpg /tmp/mongodb.asc
+    creates: /usr/share/keyrings/mongodb.gpg
+
+- name: Remove temporary MongoDB ASCII key
+  file:
+    path: /tmp/mongodb.asc
+    state: absent
 
 - name: Set MongoDB distro parameters
   set_fact:
