@@ -1,6 +1,58 @@
 ---
 #- name: Add apt repository
 #  include_tasks: add_apt_repository.yml
+- name: Determine MongoDB repo codename
+  set_fact:
+    mongodb_repo_codename: >-
+      {% if ansible_distribution == "Debian" %}
+        {% if ansible_distribution_major_version == "12" %}
+          bookworm
+        {% elif ansible_distribution_major_version == "13" %}
+          bookworm  # fallback workaround
+        {% else %}
+          unsupported
+        {% endif %}
+      {% elif ansible_distribution == "Ubuntu" %}
+        {{ ansible_distribution_release }}
+      {% else %}
+        unsupported
+      {% endif %}
+
+- name: Fail if distro is unsupported
+  fail:
+    msg: "Unsupported distribution for MongoDB: {{ ansible_distribution }} {{ ansible_distribution_version }}"
+  when: mongodb_repo_codename == "unsupported"
+
+- name: Install prerequisite packages
+  apt:
+    name:
+      - gnupg
+      - curl
+      - ca-certificates
+      - lsb-release
+    state: present
+    update_cache: yes
+
+- name: Download MongoDB GPG key
+  ansible.builtin.get_url:
+    url: "https://www.mongodb.org/static/pgp/server-{{ mongodb_version }}.asc"
+    dest: /usr/share/keyrings/mongodb.gpg
+    mode: '0644'
+
+- name: Set MongoDB APT repository
+  apt_repository:
+    repo: >-
+      {% if ansible_distribution == "Debian" %}
+      deb [arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb.gpg] https://repo.mongodb.org/apt/debian {{ mongodb_repo_codename }}/mongodb-org/{{ mongodb_version }} main
+      {% elif ansible_distribution == "Ubuntu" %}
+      deb [arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb.gpg] https://repo.mongodb.org/apt/ubuntu {{ mongodb_repo_codename }}/mongodb-org/{{ mongodb_version }} multiverse
+      {% endif %}
+    state: present
+    filename: mongodb
+
+- name: Update apt cache
+  apt:
+    update_cache: yes
 
 - name: Install mongodb-org
   apt:
