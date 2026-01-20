@@ -13,7 +13,10 @@
         db_password: "{{ datahub.mongodb.password }}"
 
 - name: Check if admin user exists in MongoDB
-  command: mongosh --quiet --eval "db.Users.find({ 'username': '{{ datahub.admin.username }}' }).toArray()" datahub
+  command: >
+    mongosh --quiet --eval
+    "db.Users.find({ 'username': '{{ datahub.admin.username }}' }).toArray()"
+    datahub
   register: mongodb_admin_user_exists
   become_user: "{{ application_user }}"
 
@@ -23,23 +26,33 @@
   become_user: "{{ application_user }}"
 
 - name: Check if consumer user exists in MongoDB
-  command: mongosh --quiet --eval "db.Users.find({ 'username': '{{ datahub.consumer.username }}' }).toArray()" datahub
+  command: >
+    mongosh --quiet --eval 
+    "db.Users.find({ 'username': '{{ datahub.consumer.username }}' }).toArray()" 
+    datahub
   register: mongodb_consumer_user_exists
   become_user: "{{ application_user }}"
 
 - name: Insert consumer user into MongoDB
-  # Gebruik insertOne (modern) ipv insert (deprecated)
-  command: mongosh --eval 'db.Users.insertOne({{ lookup("template", "./mongodb_consumer_user.json") }})' datahub
+  command: >
+    mongosh --eval 'db.Users.insertOne({{ lookup("template", "./mongodb_consumer_user.json") | quote }})' 
+    datahub
   when: mongodb_consumer_user_exists.stdout == "[]" or mongodb_consumer_user_exists.stdout | length == 0
   become_user: "{{ application_user }}"
 
 - name: Check if OAuth client exists
-  command: mongosh --quiet --eval "db.Client.find({ 'applicationName': '{{ datahub.oauth.application_name }}' }).toArray()" datahub
+  command: >
+    mongosh --quiet --eval 
+    "db.Client.find({ 'applicationName': '{{ datahub.oauth.application_name }}' }).toArray()" 
+    datahub
   register: mongodb_oauth_client_exists
   become_user: "{{ application_user }}"
 
 - name: Fetch consumer _id from MongoDB
-  command: mongosh --quiet --json=canonical --eval "db.Users.find({ 'username': '{{ datahub.consumer.username }}' }, { '_id': 1 }).toArray()" datahub
+  command: >
+    mongosh --quiet --json=canonical --eval 
+    "db.Users.find({ 'username': '{{ datahub.consumer.username }}' }, { '_id': 1 }).toArray()" 
+    datahub
   register: mongodb_consumer_id_string
   when: mongodb_oauth_client_exists.stdout == "[]" or mongodb_oauth_client_exists.stdout | length == 0
   become_user: "{{ application_user }}"
