@@ -62,7 +62,7 @@
 
 - name: Fetch client_id to use in the datahub pipeline
   command: >
-    mongo --quiet --eval
+    mongosh --quiet --eval
     "db.Client.find(
       { 'applicationName': '{{ datahub.oauth.application_name }}' },
       { '_id': 0, 'randomId': 1 }
@@ -73,7 +73,7 @@
 
 - name: Fetch secret to use in the datahub pipeline
   command: >
-    mongo --quiet --eval
+    mongosh --quiet --eval
     "db.Client.find(
       { 'applicationName': '{{ datahub.oauth.application_name }}' },
       { '_id': 0, 'secret': 1 }
