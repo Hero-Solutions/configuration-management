@@ -4,7 +4,7 @@
   shell: apt update
   become: true
 
-- name: Install git, screen, curl, pip, virtualenv, setuptools, software-properties-common, dirmngr, apt-transport-https and ca-certificates
+- name: Install base packages (Ubuntu)
   apt:
     name:
       - git
@@ -14,6 +14,20 @@
       - dirmngr
       - apt-transport-https
       - ca-certificates
+  when: ansible_distribution == "Ubuntu"
+
+- name: Install base packages (Debian)
+  apt:
+    name:
+      - git
+      - screen
+      - curl
+      - dirmngr
+      - ca-certificates
+      - gnupg
+    state: present
+    update_cache: yes
+  when: ansible_distribution == "Debian"
 
 - name: Install python-pip, python-virtualenv, python-setuptools and python-passlib when python 2.*
   apt:
