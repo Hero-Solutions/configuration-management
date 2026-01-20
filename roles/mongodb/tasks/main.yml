@@ -43,14 +43,14 @@
   set_fact:
     mongodb_apt_repo: >-
       {% if ansible_distribution == 'Debian' %}
-      deb [arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb.gpg] https://repo.mongodb.org/apt/debian/{{ mongodb_repo_codename }}/mongodb-org/{{ mongodb_version }} main
+      deb [arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb.gpg] https://repo.mongodb.org/apt/debian {{ mongodb_repo_codename }}/mongodb-org/{{ mongodb_version }} main
       {% else %}
-      deb [arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb.gpg] https://repo.mongodb.org/apt/ubuntu/{{ mongodb_repo_codename }}/mongodb-org/{{ mongodb_version }} multiverse
+      deb [arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb.gpg] https://repo.mongodb.org/apt/ubuntu {{ mongodb_repo_codename }}/mongodb-org/{{ mongodb_version }} multiverse
       {% endif %}
 
 - name: Add MongoDB APT repository
   apt_repository:
-    repo: "{{ mongodb_apt_repo | trim }}"
+    repo: "{{ mongodb_apt_repo | replace('/ ', '/') | trim }}"
     state: present
     filename: mongodb
 
