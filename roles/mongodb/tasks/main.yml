@@ -2,6 +2,12 @@
 #- name: Add apt repository
 #  include_tasks: add_apt_repository.yml
 
+- name: Fail if distro unsupported
+  fail:
+    msg: "MongoDB {{ mongodb_version }} not supported on {{ ansible_distribution }} {{ mongodb_repo_codename }}"
+  when:
+    - ansible_distribution not in ['Debian', 'Ubuntu']
+
 - name: Determine MongoDB repo codename
   set_fact:
     mongodb_repo_codename: >-
@@ -40,15 +46,19 @@
     dest: /usr/share/keyrings/mongodb.gpg
     mode: '0644'
 
+- name: Set MongoDB distro parameters
+  set_fact:
+    mongodb_repo_base: "{{ 'debian' if ansible_distribution == 'Debian' else 'ubuntu' }}"
+    mongodb_repo_component: "{{ 'main' if ansible_distribution == 'Debian' else 'multiverse' }}"
+
 - name: Add MongoDB APT repository
-  apt_repository:
-    repo: >-
-      deb [arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb.gpg]
-      https://repo.mongodb.org/apt/{{ 'debian' if ansible_distribution == 'Debian' else 'ubuntu' }}
-      {{ mongodb_repo_codename }}/mongodb-org/{{ mongodb_version }}
-      {{ 'main' if ansible_distribution == 'Debian' else 'multiverse' }}
-    state: present
-    filename: mongodb
+  copy:
+    dest: /etc/apt/sources.list.d/mongodb.list
+    content: |
+      deb [arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb.gpg] https://repo.mongodb.org/apt/{{ mongodb_repo_base }} {{ mongodb_repo_codename }}/mongodb-org/{{ mongodb_version }} {{ mongodb_repo_component }}
+    owner: root
+    group: root
+    mode: '0644'
 
 - name: Update apt cache
   apt:
