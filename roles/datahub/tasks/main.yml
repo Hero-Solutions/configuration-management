@@ -67,12 +67,12 @@
           {{
             (
               mongodb_consumer_id_string.stdout | from_json
-            )[0]._id.$oid
+            )[0]['_id']['$oid']
           }}
         client_id: "{{ lookup('password', '/dev/null chars=ascii_lowercase,digits length=50') }}"
         secret: "{{ lookup('password', '/dev/null chars=ascii_lowercase,digits length=50') }}"
         external_id: "{{ lookup('password', '/dev/null chars=hexdigits length=6') | lower }}"
-  when: mongodb_oauth_client_exists.stdout == "[]" or mongodb_oauth_client_exists.stdout | length == 0
+  when: (mongodb_oauth_client_exists.stdout | from_json) | length == 0
 
 - name: Insert OAuth client into MongoDB
   command: mongosh --eval 'db.Client.insertOne({{ lookup("template", "./mongodb_oauth_client.json") }})' datahub
