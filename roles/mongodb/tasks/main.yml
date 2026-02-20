@@ -89,7 +89,6 @@
   pip:
     name:
       - pymongo>=4.0
-    break_system_packages: yes
 
 - name: Create MongoDB root user
   community.mongodb.mongodb_user:
