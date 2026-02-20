@@ -1,20 +1,46 @@
 ---
 - name: Install nginx
-  apt: name=nginx state=present
+  package:
+    name: nginx
+    state: present
 
-- name: Delete default nginx vhost symlink
-  file: path=/etc/nginx/sites-enabled/default state=absent
+- name: Remove default nginx site (Debian/Ubuntu)
+  file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
   notify: restart nginx
+  when: ansible_os_family == "Debian"
 
-- name: Enable nginx service
+- name: Remove default nginx config (AlmaLinux)
+  file:
+    path: /etc/nginx/conf.d/default.conf
+    state: absent
+  notify: restart nginx
+  when: ansible_os_family == "RedHat"
+
+- name: Enable and start nginx service
   service:
     name: nginx
     state: started
     enabled: yes
 
-- name: Create htpasswd entry if needed
+- name: Install htpasswd utility (apt)
+  apt:
+    name: apache2-utils
+    state: present
+  when: ansible_os_family == "Debian"
+
+- name: Install htpasswd utility (dnf)
+  dnf:
+    name: httpd-tools
+    state: present
+  when: ansible_os_family == "RedHat"
+
+- name: Create nginx htpasswd file
   htpasswd:
     path: /etc/nginx/.htpasswd
     name: "{{ nginx.auth_basic_username }}"
     password: "{{ nginx.auth_basic_password }}"
-  when: nginx.auth_basic_username is defined and nginx.auth_basic_password is defined
+  when:
+    - nginx.auth_basic_username is defined
+    - nginx.auth_basic_password is defined
