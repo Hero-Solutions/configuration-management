@@ -1,8 +1,13 @@
 ---
-# Using shell instead of apt because apt does not appear to be working (cause unknown)
-- name: Update apt repositories
+- name: Update package cache (apt)
   shell: apt update
   become: true
+  when: ansible_os_family == "Debian"
+
+- name: Update package cache (dnf)
+  dnf:
+    update_cache: yes
+  when: ansible_os_family == "RedHat"
 
 - name: Install base packages (Ubuntu)
   apt:
@@ -14,6 +19,7 @@
       - dirmngr
       - apt-transport-https
       - ca-certificates
+    state: present
   when: ansible_distribution == "Ubuntu"
 
 - name: Install base packages (Debian)
@@ -29,25 +35,38 @@
     update_cache: yes
   when: ansible_distribution == "Debian"
 
-- name: Install python-pip, python-virtualenv, python-setuptools and python-passlib when python 2.*
-  apt:
+- name: Install base packages (AlmaLinux)
+  dnf:
     name:
-      - python-pip
-      - python-virtualenv
-      - python-setuptools
-      - python-passlib
-  when: ansible_python_version is match("2\..*")
+      - git
+      - screen
+      - curl
+      - ca-certificates
+      - gnupg2
+      - policycoreutils-python-utils
+    state: present
+  when: ansible_os_family == "RedHat"
 
-- name: Install python3-pip, python3-virtualenv, python3-setuptools and python3-passlib when python 3.*
+- name: Install Python 3 packages (apt)
   apt:
     name:
       - python3-pip
       - python3-virtualenv
       - python3-setuptools
       - python3-passlib
-  when: ansible_python_version is match("3\..*")
+    state: present
+  when: ansible_os_family == "Debian"
 
-- name: Create application user if it does not yet exist
+- name: Install Python 3 packages (dnf)
+  dnf:
+    name:
+      - python3-pip
+      - python3-setuptools
+      - python3-passlib
+    state: present
+  when: ansible_os_family == "RedHat"
+
+- name: Ensure application user exists
   user:
     name: "{{ application_user }}"
     password: "{{ application_password | password_hash('sha512') }}"

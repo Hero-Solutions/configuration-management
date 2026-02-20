@@ -1,35 +1,31 @@
 ---
-#- name: Add apt repository
-#  include_tasks: add_apt_repository.yml
+- name: Install MariaDB server
+  package:
+    name: mariadb-server
+    state: present
 
-# apt update currently not working, disabled for now
-#- name: Update apt repositories
-#  apt:
-#    update_cache: yes
+- name: Install Python MySQL driver
+  package:
+    name: >-
+      {{ 'python3-pymysql'
+         if ansible_os_family == 'Debian'
+         else 'python3-PyMySQL' }}
+    state: present
 
-- name: Install MariaDB
-  apt:
-    name:
-      - mariadb-server
+- name: Enable and start MariaDB
+  systemd:
+    name: mariadb
+    enabled: yes
+    state: started
 
-- name: Install python-pymysql when python 2.*
-  apt:
-    name:
-      - python-pymysql
-  when: ansible_python_version is match("2\..*")
-
-- name: Install python3-pymysql when python 3.*
-  apt:
-    name:
-      - python3-pymysql
-  when: ansible_python_version is match("3\..*")
-
-- name: Update MariaDB password for root account
+- name: Set MariaDB root password
   mysql_user:
     name: root
     password: "{{ mariadb_root_password }}"
-    login_unix_socket: /var/run/mysqld/mysqld.sock
-    login_password: "{{ mariadb_root_password }}"
-    host: "localhost"
+    login_unix_socket: >-
+      {{ '/var/run/mysqld/mysqld.sock'
+         if ansible_os_family == 'Debian'
+         else '/var/lib/mysql/mysql.sock' }}
+    host: localhost
     priv: "*.*:ALL,GRANT"
     check_implicit_admin: true

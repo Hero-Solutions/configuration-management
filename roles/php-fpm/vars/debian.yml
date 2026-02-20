@@ -1,0 +1,15 @@
+php_packages:
+  - "php{{ php.version }}"
+  - "php{{ php.version }}-fpm"
+  - "php{{ php.version }}-cli"
+  - "php{{ php.version }}-apcu"
+  - "php{{ php.version }}-intl"
+  - "php{{ php.version }}-mbstring"
+  - "php{{ php.version }}-curl"
+  - "php{{ php.version }}-xml"
+  - "php{{ php.version }}-zip"
+  - "php{{ php.version }}-mongodb"
+  - composer
+
+php_ini_path: "/etc/php/{{ php.version }}/fpm/php.ini"
+php_fpm_service: "php{{ php.version }}-fpm"

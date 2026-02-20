@@ -1,43 +1,26 @@
 ---
+- name: Load OS specific vars
+  include_vars: "{{ ansible_os_family }}.yml"
+
 - name: Add apt repository if needed
   include_tasks: add_apt_repository.yml
-  when: ansible_facts.distribution == 'Debian' or ansible_facts.distribution == 'Ubuntu'
+  when:
+    - ansible_os_family == 'Debian'
+    - php.use_sury_repo | bool
 
-- name: Install php-fpm and deps
-  apt:
-    name:
-      - php{{ php.version }}
-      - php{{ php.version }}-apcu
-      - php{{ php.version }}-fpm
-      - php{{ php.version }}-cli
-      - php{{ php.version }}-fileinfo
-      - php{{ php.version }}-intl
-      - php{{ php.version }}-mbstring
-      - php{{ php.version }}-curl
-      - php{{ php.version }}-mongodb
-      - php{{ php.version }}-xml
-      - php{{ php.version }}-zip
-      - php{{ php.version }}-dev
-      - php-pear
-      - composer
+- name: Install PHP-FPM and extensions
+  package:
+    name: "{{ php_packages }}"
     state: present
-
-# First run of install will output a huge error, but this can be safely ignored
-- name: Install mongodb through pear
-  community.general.pear:
-    name: pecl/mongodb
-    state: present
-  ignore_errors: yes
-  no_log: yes
 
 - name: Copy php.ini
   template:
     src: php.ini
-    dest: /etc/php/{{ php.version }}/fpm/php.ini
+    dest: "{{ php_ini_path }}"
   notify: restart php-fpm
 
-- name: Enable php-fpm service
+- name: Enable and start PHP-FPM
   service:
-    name: php{{ php.version }}-fpm
+    name: "{{ php_fpm_service }}"
     state: started
     enabled: yes
