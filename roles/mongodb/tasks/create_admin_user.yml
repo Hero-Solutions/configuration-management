@@ -6,6 +6,8 @@
     database: "{{ db_database }}"
     name: "{{ db_name }}"
     password: "{{ db_password }}"
-    roles: readWrite,dbAdmin
+    roles:
+      - readWrite
+      - dbAdmin
     state: present
   become_user: "{{ application_user }}"

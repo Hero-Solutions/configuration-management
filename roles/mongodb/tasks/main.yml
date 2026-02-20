@@ -1,8 +1,5 @@
 ---
-#- name: Add apt repository
-#  include_tasks: add_apt_repository.yml
-
-- name: Install prerequisite packages
+- name: Install prerequisite packages (apt)
   apt:
     name:
       - gnupg
@@ -11,30 +8,37 @@
       - lsb-release
     state: present
     update_cache: yes
+  when: ansible_os_family == "Debian"
+
+- name: Install prerequisite packages (dnf)
+  dnf:
+    name:
+      - gnupg2
+      - curl
+      - ca-certificates
+    state: present
+  when: ansible_os_family == "RedHat"
 
 - name: Fail on unsupported distribution
   fail:
     msg: "Unsupported distribution: {{ ansible_distribution }}"
-  when: ansible_distribution not in ["Debian", "Ubuntu"]
+  when: ansible_os_family not in ["Debian", "RedHat"]
 
-- name: Set MongoDB repo parameters
+- name: Set MongoDB apt repository parameters
   set_fact:
     mongodb_repo_base: "{{ 'debian' if ansible_distribution == 'Debian' else 'ubuntu' }}"
-    mongodb_repo_codename: >-
-      {{
-        'bookworm'
-        if ansible_distribution == 'Debian'
-        else ansible_distribution_release
-      }}
+    mongodb_repo_codename: "{{ 'bookworm' if ansible_distribution == 'Debian' else ansible_distribution_release }}"
+  when: ansible_os_family == "Debian"
 
-- name: Install MongoDB GPG key
+- name: Install MongoDB GPG key (apt)
   shell: |
     curl -fsSL https://pgp.mongodb.com/server-{{ mongodb_version }}.asc \
     | gpg --dearmor -o /usr/share/keyrings/mongodb-server-{{ mongodb_version }}.gpg
   args:
     creates: "/usr/share/keyrings/mongodb-server-{{ mongodb_version }}.gpg"
+  when: ansible_os_family == "Debian"
 
-- name: Add MongoDB APT repository
+- name: Add MongoDB apt repository
   copy:
     dest: "/etc/apt/sources.list.d/mongodb.list"
     owner: root
@@ -42,17 +46,43 @@
     mode: '0644'
     content: |
       deb [signed-by=/usr/share/keyrings/mongodb-server-{{ mongodb_version }}.gpg] https://repo.mongodb.org/apt/{{ mongodb_repo_base }} {{ mongodb_repo_codename }}/mongodb-org/{{ mongodb_version }} main
+  when: ansible_os_family == "Debian"
 
 - name: Update apt cache
   apt:
     update_cache: yes
+  when: ansible_os_family == "Debian"
 
-- name: Install mongodb-org
+- name: Install MongoDB packages (apt)
   apt:
     name: mongodb-org
+    state: present
   notify: Restart mongodb
+  when: ansible_os_family == "Debian"
 
-- name: Flush handlers
+- name: Add MongoDB yum repository
+  copy:
+    dest: "/etc/yum.repos.d/mongodb-org-{{ mongodb_version }}.repo"
+    owner: root
+    group: root
+    mode: '0644'
+    content: |
+      [mongodb-org-{{ mongodb_version }}]
+      name=MongoDB Repository
+      baseurl=https://repo.mongodb.org/yum/redhat/$releasever/mongodb-org/{{ mongodb_version }}/x86_64/
+      gpgcheck=1
+      enabled=1
+      gpgkey=https://pgp.mongodb.com/server-{{ mongodb_version }}.asc
+  when: ansible_os_family == "RedHat"
+
+- name: Install MongoDB packages (dnf)
+  dnf:
+    name: mongodb-org
+    state: present
+  notify: Restart mongodb
+  when: ansible_os_family == "RedHat"
+
+- name: Flush MongoDB handlers
   meta: flush_handlers
 
 - name: Install pymongo
@@ -61,7 +91,7 @@
       - pymongo>=4.0
     break_system_packages: yes
 
-- name: Setup MongoDB root user
+- name: Create MongoDB root user
   community.mongodb.mongodb_user:
     database: admin
     name: "{{ datahub.mongodb.root_username }}"
@@ -69,7 +99,7 @@
     roles: root
   become_user: "{{ application_user }}"
 
-- name: Enable mongod
+- name: Enable and start mongod service
   service:
     name: mongod
     state: started
