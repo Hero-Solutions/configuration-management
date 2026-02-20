@@ -14,7 +14,7 @@
 
 - name: Check if admin user exists in MongoDB
   command: >
-    mongosh --quiet --eval
+    mongosh --quiet --json=canonical --eval
     "db.Users.find({ 'username': '{{ datahub.admin.username }}' }).toArray()"
     datahub
   register: mongodb_admin_user_exists
@@ -27,7 +27,7 @@
 
 - name: Check if consumer user exists in MongoDB
   command: >
-    mongosh --quiet --eval 
+    mongosh --quiet --json=canonical --eval
     "db.Users.find({ 'username': '{{ datahub.consumer.username }}' }).toArray()" 
     datahub
   register: mongodb_consumer_user_exists
@@ -42,7 +42,7 @@
 
 - name: Check if OAuth client exists
   command: >
-    mongosh --quiet --eval 
+    mongosh --quiet --json=canonical --eval
     "db.Client.find({ 'applicationName': '{{ datahub.oauth.application_name }}' }).toArray()" 
     datahub
   register: mongodb_oauth_client_exists
@@ -50,7 +50,7 @@
 
 - name: Fetch consumer _id from MongoDB
   command: >
-    mongosh --quiet --json=canonical --eval 
+    mongosh --quiet --json=canonical --eval
     "db.Users.find({ 'username': '{{ datahub.consumer.username }}' }, { '_id': 1 }).toArray()" 
     datahub
   register: mongodb_consumer_id_string
