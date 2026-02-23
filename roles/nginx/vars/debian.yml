@@ -4,3 +4,6 @@ nginx_vhost_use_symlink: true
 
 nginx_fastcgi_params_file: /etc/nginx/fastcgi_params
 nginx_log_dir: /var/log/nginx
+
+php_fpm_socket_dir: /run/php
+php_fpm_socket_pattern: "php{{ php.version }}-fpm-{{ vhost.php_socket_name }}.sock"
