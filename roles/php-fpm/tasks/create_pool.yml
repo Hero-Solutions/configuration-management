@@ -1,29 +1,34 @@
 ---
-- name: Check if default pool exists
+- name: Ensure php-fpm pool directory exists
+  file:
+    path: "{{ php_fpm_pool_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Check if default www pool exists
   stat:
-    path: "/etc/php/{{ php.version }}/fpm/pool.d/www.conf"
-  register: stat_result
+    path: "{{ php_fpm_pool_dir }}/www.conf"
+  register: www_pool
 
-- name: Disable default pool if it exists
-  command: mv /etc/php/{{ php.version }}/fpm/pool.d/www.conf /etc/php/{{ php.version }}/fpm/pool.d/www.conf.disabled creates=/etc/php/{{ php.version }}/fpm/pool.d/www.conf.disabled
-  when: stat_result.stat.exists
-
-- name: Get checksum of file before
-  shell: "md5sum /etc/php/{{ php.version }}/fpm/pool.d/{{ pool_name }}.conf 2>/dev/null | cut -d' ' -f1"
-  register: file_checksum_before
-
-- name: "Copy {{ pool_name }} php-fpm pool"
-  template:
-    src: pool.conf
-    dest: "/etc/php/{{ php.version }}/fpm/pool.d/{{ pool_name }}.conf"
+- name: Disable default www pool if present
+  command:
+    cmd: mv {{ php_fpm_pool_dir }}/www.conf {{ php_fpm_pool_dir }}/www.conf.disabled
+  when: www_pool.stat.exists
   notify: restart php-fpm
 
-- name: Get checksum of file after
-  shell: "md5sum /etc/php/{{ php.version }}/fpm/pool.d/{{ pool_name }}.conf 2>/dev/null | cut -d' ' -f1"
-  register: file_checksum_after
+- name: Deploy php-fpm pool configuration
+  template:
+    src: pool.conf
+    dest: "{{ php_fpm_pool_dir }}/{{ pool_name }}.conf"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: restart php-fpm
 
-- name: Restart php-fpm if the file has changed
+- name: Ensure php-fpm service is enabled and running
   service:
-    name: php{{ php.version }}-fpm
-    state: restarted
-  when: file_checksum_before.stdout != file_checksum_after.stdout
+    name: "{{ php_fpm_service }}"
+    state: started
+    enabled: true

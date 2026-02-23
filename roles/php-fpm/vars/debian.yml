@@ -13,3 +13,7 @@ php_packages:
 
 php_ini_path: "/etc/php/{{ php.version }}/fpm/php.ini"
 php_fpm_service: "php{{ php.version }}-fpm"
+php_fpm_pool_dir: "/etc/php/{{ php.version }}/fpm/pool.d"
+php_fpm_socket_dir: "/run/php"
+php_fpm_socket_prefix: "php{{ php.version }}-fpm-"
+php_fpm_socket_suffix: "-fpm.sock"
