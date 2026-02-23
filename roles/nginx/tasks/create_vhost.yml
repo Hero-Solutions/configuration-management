@@ -1,4 +1,7 @@
 ---
+- name: Load OS specific vars
+  include_vars: "{{ ansible_os_family | lower }}.yml"
+
 - name: Set nginx_vhost to vhost
   set_fact:
     vhost: "{{ nginx_vhost }}"
@@ -88,14 +91,15 @@
 - name: "Copy nginx vhost for {{ vhost.name }}"
   template:
     src: "{{ vhost.type }}.vhost"
-    dest: "/etc/nginx/sites-available/{{ vhost.configfile }}"
+    dest: "{{ nginx_vhost_available_dir }}/{{ vhost.configfile }}"
   notify: restart nginx
 
-- name: "Create symlink for {{ vhost.name }} nginx vhost"
+- name: "Enable nginx vhost (Debian-style)"
   file:
-    src: "/etc/nginx/sites-available/{{ vhost.configfile }}"
-    dest: "/etc/nginx/sites-enabled/{{ vhost.configfile }}"
+    src: "{{ nginx_vhost_available_dir }}/{{ vhost.configfile }}"
+    dest: "{{ nginx_vhost_enabled_dir }}/{{ vhost.configfile }}"
     state: link
+  when: nginx_vhost_use_symlink
   notify: restart nginx
 
 - name: Add domain to LetsEncrypt array to request SSL certificates at the end of the play

@@ -4,8 +4,8 @@ server {
 {% endfor %}
   server_name {{ vhost.server_name }};
 
-  access_log  /var/log/nginx/{{ vhost.name }}_access.log combined;
-  error_log   /var/log/nginx/{{ vhost.name }}_error.log;
+  access_log  {{ nginx_log_dir }}/{{ vhost.name }}_access.log combined;
+  error_log   {{ nginx_log_dir }}/{{ vhost.name }}_error.log;
 
 {% if '443' in listen_ports %}
   ssl_certificate {{ vhost.ssl.cert }};
@@ -60,7 +60,7 @@ server {
     fastcgi_pass unix:/run/php/php{{ php.version }}-fpm-{{ vhost.php_socket_name }}.sock;
     fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
     fastcgi_param DOCUMENT_ROOT $realpath_root;
-    include /etc/nginx/fastcgi_params;
+    include {{ nginx_fastcgi_params_file }};
 {% if php.request_buffering != "on" %}
     fastcgi_request_buffering {{ php.request_buffering }};
 {% endif %}
