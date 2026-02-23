@@ -24,6 +24,29 @@
     state: started
     enabled: yes
 
+- name: Ensure firewalld is running (RedHat)
+  service:
+    name: firewalld
+    state: started
+    enabled: yes
+  when: ansible_os_family == "RedHat"
+
+- name: Open HTTP service in firewalld (RedHat)
+  firewalld:
+    service: http
+    permanent: true
+    state: enabled
+    immediate: true
+  when: ansible_os_family == "RedHat"
+
+- name: Open HTTPS service in firewalld (RedHat)
+  firewalld:
+    service: https
+    permanent: true
+    state: enabled
+    immediate: true
+  when: ansible_os_family == "RedHat"
+
 - name: Install htpasswd utility (apt)
   apt:
     name: apache2-utils
