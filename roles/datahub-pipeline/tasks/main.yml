@@ -74,6 +74,17 @@
     PATH: "{{ application_user_homedir }}/perl5/bin:{{ ansible_env.PATH }}"
     MARIADB_CONFIG: "{{ '/usr/bin/mariadb_config' if ansible_os_family == 'RedHat' else omit }}"
 
+- name: Install legacy Rackspace CloudFiles Perl dependency on RedHat
+  cpanm:
+    name: WebService::Rackspace::CloudFiles
+    locallib: "{{ application_user_homedir }}/perl5"
+    notest: true
+  become_user: "{{ application_user }}"
+  environment:
+    PERL5LIB: "{{ application_user_homedir }}/perl5/lib/perl5"
+    PATH: "{{ application_user_homedir }}/perl5/bin:{{ ansible_env.PATH }}"
+  when: ansible_os_family == "RedHat"
+
 - name: Install additional Datahub pipeline Perl modules
   cpanm:
     name: "{{ item }}"
