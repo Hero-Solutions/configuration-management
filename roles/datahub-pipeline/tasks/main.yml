@@ -1,13 +1,12 @@
 ---
-- name: Set pipeline datahub_url if not specified
+- name: Set pipeline datahub_url when undefined
   set_fact:
     datahub_pipeline:
       datahub_url: "{{ datahub_pipeline.datahub_protocol }}://{{ datahub.nginx.server_name }}"
-    cacheable: yes
   when: datahub_pipeline.datahub_url is undefined
   become_user: "{{ application_user }}"
 
-- name: Remove trailing slashes from paths
+- name: Normalize pipeline directory paths
   set_fact:
     datahub_pipeline:
       dir: "{{ datahub_pipeline.dir | regex_replace('\\/$', '') }}"
@@ -17,60 +16,55 @@
         repo_dir: "{{ datahub_pipeline.authority_files.repo_dir | regex_replace('\\/$', '') }}"
   become_user: "{{ application_user }}"
 
-- name: Initialize datahub_pipeline_paths array
-  set_fact:
-    datahub_pipeline_fix_file_paths: {}
-
-- name: Set absolute paths for fix file paths and store them in the new array
-  set_fact:
-    datahub_pipeline_fix_file_paths:
-      "{{ datahub_pipeline_fix_file_paths 
-        | combine({ item.shorthand: item.fix_file_path | regex_replace('^(.*)$', datahub_pipeline.dir + '/fixes/\\1') if not item.fix_file_path.startswith('/') else item.fix_file_path }) }}"
-  with_items:
-    - "{{ datahub_pipeline.institutions }}"
-
-- name: Install perl
-  apt:
+- name: Install base system packages
+  package:
     name:
       - perl
-
-- name: Install apt packages
-  apt:
-    name:
-      - sqlite3
-      - cpanminus
-      - libssl-dev
-      - libxslt1-dev
-      - libxml2-dev
+      - git
       - make
-      - build-essential
-      - expat
-      - libexpat1
-      - libexpat1-dev
-      - libcrypt-ssleay-perl
-      - libsqlite3-dev
-      - perl-modules
-      - libdbd-sqlite3-perl
-      - libcatmandu-perl
-      - libcatmandu-aat-perl
-      - libcatmandu-xml-perl
-      - libxml-easy-perl
-      - libcatmandu-oai-perl
-      - libcatmandu-viaf-perl
-
-- name: Install MySQL/MariaDB client development libraries
-  apt:
-    name: "{{ mysql_dev_packages }}"
+      - gcc
+      - sqlite
     state: present
-    update_cache: true
-  vars:
-    mysql_dev_packages: >-
-      {{
-        ['default-libmysqlclient-dev'] if ansible_distribution == 'Ubuntu'
-        else ['libmariadb-dev', 'libmariadb-dev-compat', 'mariadb-client-core']
-      }}
 
-- name: Install Perl module DBD::MariaDB
+- name: Install cpanminus package
+  package:
+    name: "{{ 'cpanminus' if ansible_os_family == 'Debian' else 'perl-App-cpanminus' }}"
+    state: present
+
+- name: Install development libraries on Debian systems
+  package:
+    name:
+      - build-essential
+      - libssl-dev
+      - libxml2-dev
+      - libxslt1-dev
+      - libexpat1-dev
+      - libsqlite3-dev
+      - default-libmysqlclient-dev
+    state: present
+  when: ansible_os_family == "Debian"
+
+- name: Install development libraries on RedHat systems
+  package:
+    name:
+      - openssl-devel
+      - libxml2-devel
+      - libxslt-devel
+      - expat-devel
+      - sqlite-devel
+      - mariadb-devel
+    state: present
+  when: ansible_os_family == "RedHat"
+
+- name: Ensure local perl5 directory exists in application home
+  file:
+    path: "{{ application_user_homedir }}/perl5"
+    state: directory
+    owner: "{{ application_user }}"
+    group: "{{ application_user }}"
+    mode: "0755"
+
+- name: Install DBD::MariaDB in user local perl library
   cpanm:
     name: DBD::MariaDB
     locallib: "{{ application_user_homedir }}/perl5"
@@ -78,34 +72,13 @@
   environment:
     PERL5LIB: "{{ application_user_homedir }}/perl5/lib/perl5"
     PATH: "{{ application_user_homedir }}/perl5/bin:{{ ansible_env.PATH }}"
+    MARIADB_CONFIG: "{{ '/usr/bin/mariadb_config' if ansible_os_family == 'RedHat' else omit }}"
 
-- name: Create DBD::mysql compatibility symlink
-  file:
-    src: "{{ application_user_homedir }}/perl5/lib/perl5/x86_64-linux-gnu-thread-multi/DBD/MariaDB.pm"
-    dest: "{{ application_user_homedir }}/perl5/lib/perl5/x86_64-linux-gnu-thread-multi/DBD/mysql.pm"
-    state: link
-    force: true
-
-- name: Symlink auto/DBD/mysql to auto/DBD/MariaDB
-  file:
-    src: "{{ application_user_homedir }}/perl5/lib/perl5/x86_64-linux-gnu-thread-multi/auto/DBD/MariaDB"
-    dest: "{{ application_user_homedir }}/perl5/lib/perl5/x86_64-linux-gnu-thread-multi/auto/DBD/mysql"
-    state: link
-    force: true
-
-- name: Provide mysql_config compatibility for Debian
-  file:
-    src: /usr/bin/mariadb_config
-    dest: /usr/local/bin/mysql_config
-    state: link
-  when: ansible_facts.distribution == 'Debian'
-
-# Install without tests
-- name: Install additional pipeline dependencies
+- name: Install additional Datahub pipeline Perl modules
   cpanm:
     name: "{{ item }}"
     locallib: "{{ application_user_homedir }}/perl5"
-  with_items:
+  loop:
     - Datahub::Factory
     - Datahub::Factory::Cmd
     - Datahub::Factory::Importer::EIZ
@@ -114,66 +87,83 @@
   environment:
     PERL5LIB: "{{ application_user_homedir }}/perl5/lib/perl5"
     PATH: "{{ application_user_homedir }}/perl5/bin:{{ ansible_env.PATH }}"
-    MARIADB_CONFIG: "/usr/bin/mariadb_config"
+    MARIADB_CONFIG: "{{ '/usr/bin/mariadb_config' if ansible_os_family == 'RedHat' else omit }}"
 
-- name: Check if LIDO_1_0 directory exists
-  stat:
-    path: "{{ application_user_homedir }}/perl5/lib/perl5/Lido/XML/LIDO_1_0"
-  register: lido_dir
+- name: Provide mysql_config compatibility symlink on Debian
+  file:
+    src: /usr/bin/mariadb_config
+    dest: /usr/local/bin/mysql_config
+    state: link
+  when: ansible_os_family == "Debian"
 
-- name: Check if backup already exists
+- name: Discover LIDO_1_0 directory inside user local perl tree
+  find:
+    paths: "{{ application_user_homedir }}/perl5/lib/perl5"
+    patterns: "LIDO_1_0"
+    file_type: directory
+    recurse: true
+  register: lido_directories
+
+- name: Set LIDO_1_0 directory path fact
+  set_fact:
+    lido_target_dir: "{{ lido_directories.files[0].path }}"
+  when: lido_directories.matched > 0
+
+- name: Check if custom lido_v1 backup already exists
   stat:
-    path: "{{ application_user_homedir }}/perl5/lib/perl5/Lido/XML/LIDO_1_0/lido_v1_old.pm"
+    path: "{{ lido_target_dir }}/lido_v1_old.pm"
   register: lido_backup
-  when: lido_dir.stat.exists
+  when: lido_directories.matched > 0
 
-- name: Backup existing lido_v1.pm if present and no backup exists
-  command: mv lido_v1.pm lido_v1_old.pm
-  args:
-    chdir: "{{ application_user_homedir }}/perl5/lib/perl5/Lido/XML/LIDO_1_0"
-    removes: "{{ application_user_homedir }}/perl5/lib/perl5/Lido/XML/LIDO_1_0/lido_v1.pm"
-  become_user: "{{ application_user }}"
-  when:
-    - lido_dir.stat.exists
-    - not lido_backup.stat.exists
-
-- name: Copy new lido_v1.pm if directory exists and no backup yet
+- name: Backup original lido_v1.pm using copy module
   copy:
-    src: lido_v1.pm
-    dest: "{{ application_user_homedir }}/perl5/lib/perl5/Lido/XML/LIDO_1_0/lido_v1.pm"
+    src: "{{ lido_target_dir }}/lido_v1.pm"
+    dest: "{{ lido_target_dir }}/lido_v1_old.pm"
+    remote_src: true
     owner: "{{ application_user }}"
     group: "{{ application_user }}"
     mode: "0644"
+  become_user: "{{ application_user }}"
   when:
-    - lido_dir.stat.exists
+    - lido_directories.matched > 0
     - not lido_backup.stat.exists
 
-- name: Create datahub-pipeline folder
+- name: Deploy custom lido_v1.pm override
+  template:
+    src: lido_v1.pm
+    dest: "{{ lido_target_dir }}/lido_v1.pm"
+    owner: "{{ application_user }}"
+    group: "{{ application_user }}"
+    mode: "0644"
+  become_user: "{{ application_user }}"
+  when: lido_directories.matched > 0
+
+- name: Create main datahub pipeline directory
   file:
     path: "{{ datahub_pipeline.dir }}"
     state: directory
     owner: "{{ application_user }}"
     group: "{{ application_user }}"
 
-- name: Create repo folders
-  file: 
+- name: Create pipeline repository directories
+  file:
     path: "{{ item }}"
     state: directory
-    recurse: true 
+    recurse: true
     owner: "{{ application_user }}"
     group: "{{ application_user }}"
-  with_items:
+  loop:
     - "{{ datahub_pipeline.fixes.repo_dir }}"
     - "{{ datahub_pipeline.authority_files.repo_dir }}"
 
-- name: Checkout datahub-pipeline repos
+- name: Clone pipeline repositories
   git:
     repo: "{{ item.url }}"
     dest: "{{ item.dest }}/repo/"
-    force: true
     version: "{{ item.branch }}"
+    force: true
   become_user: "{{ application_user }}"
-  with_items:
+  loop:
     - url: "{{ datahub_pipeline.fixes.repo_url }}"
       dest: "{{ datahub_pipeline.fixes.repo_dir }}"
       branch: "{{ datahub_pipeline.fixes.branch }}"
@@ -181,52 +171,27 @@
       dest: "{{ datahub_pipeline.authority_files.repo_dir }}"
       branch: "{{ datahub_pipeline.authority_files.branch }}"
 
-- name: Override vocabularies.sh
+- name: Deploy customized vocabularies.sh script
   template:
     src: vocabularies.sh
     dest: "{{ datahub_pipeline.fixes.repo_dir }}/repo/scripts/vocabularies.sh"
   become_user: "{{ application_user }}"
 
-- name: Copy datahub.ini for datahub pipeline
+- name: Deploy datahub.ini configuration file
   template:
     src: datahub.ini
     dest: "{{ datahub_pipeline.dir }}/datahub.ini"
   become_user: "{{ application_user }}"
 
-- name: Link fixes and authority_files repos
+- name: Create symlinks to pipeline repositories
   file:
     src: "{{ item.src }}/repo/"
     dest: "{{ item.dest }}"
     state: link
     owner: "{{ application_user }}"
     group: "{{ application_user }}"
-  with_items:
+  loop:
     - src: "{{ datahub_pipeline.fixes.repo_dir }}"
       dest: "{{ datahub_pipeline.dir }}/fixes"
     - src: "{{ datahub_pipeline.authority_files.repo_dir }}"
       dest: "{{ datahub_pipeline.dir }}/authority_files"
-
-- name: Provide additional crontab entry/entries to download IIIF manifest sqlite databas(es) from relevant imagehub(s)
-  set_fact:
-    cronjobs: "{{ cronjobs + [ item ] }}"
-  with_items: "{{ datahub_pipeline.imagehub_cronjobs }}"
-
-- name: Provide crontab entry for daily reload of datahub records (no output file, not verbose)
-  set_fact:
-    cronjobs: "{{ cronjobs + [ 'PERL5LIB=~' ~ application_user ~ '/perl5/lib/perl5/ ~' ~ application_user ~ '/perl5/bin/dhconveyor transport -p ' ~ datahub_pipeline.dir ~ '/datahub.ini -L1' ] }}"
-  when: datahub_pipeline.output_file | length == 0 and not datahub_pipeline.output_verbose
-
-- name: Provide crontab entry for daily reload of datahub records (no output file, verbose)
-  set_fact:
-    cronjobs: "{{ cronjobs + [ 'PERL5LIB=~' ~ application_user ~ '/perl5/lib/perl5/ ~' ~ application_user ~ '/perl5/bin/dhconveyor transport -p ' ~ datahub_pipeline.dir ~ '/datahub.ini -v -L1' ] }}"
-  when: datahub_pipeline.output_file | length == 0 and datahub_pipeline.output_verbose
-
-- name: Provide crontab entry for daily reload of datahub records (output file, not verbose)
-  set_fact:
-    cronjobs: "{{ cronjobs + [ 'PERL5LIB=~' ~ application_user ~ '/perl5/lib/perl5/ script -q -c \"~' ~ application_user ~ '/perl5/bin/dhconveyor transport -p ' ~ datahub_pipeline.dir ~ '/datahub.ini -L1\" > ' ~ datahub_pipeline.output_file ] }}"
-  when: datahub_pipeline.output_file | length > 0 and not datahub_pipeline.output_verbose
-
-- name: Provide crontab entry for daily reload of datahub records (output file, verbose)
-  set_fact:
-    cronjobs: "{{ cronjobs + [ 'PERL5LIB=~' ~ application_user ~ '/perl5/lib/perl5/ script -q -c \"~' ~ application_user ~ '/perl5/bin/dhconveyor transport -p ' ~ datahub_pipeline.dir ~ '/datahub.ini -v -L1\" > ' ~ datahub_pipeline.output_file ] }}"
-  when: datahub_pipeline.output_file | length > 0 and datahub_pipeline.output_verbose
