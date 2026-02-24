@@ -140,7 +140,7 @@
     - not lido_backup.stat.exists
 
 - name: Deploy custom lido_v1.pm override
-  template:
+  copy:
     src: lido_v1.pm
     dest: "{{ lido_target_dir }}/lido_v1.pm"
     owner: "{{ application_user }}"
