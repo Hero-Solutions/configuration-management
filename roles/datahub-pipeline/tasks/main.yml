@@ -22,10 +22,18 @@
 
 - name: Set absolute paths for fix file paths and store them in the new array
   set_fact:
-    datahub_pipeline_fix_file_paths:
-      "{{ datahub_pipeline_fix_file_paths | combine({ item.shorthand: item.fix_file_path | regex_replace('^(.*)$', datahub_pipeline.dir + '/fixes/\\1') if not item.fix_file_path.startswith('/') else item.fix_file_path }) }}"
-  with_items:
-    - "{{ datahub_pipeline.institutions }}"
+    datahub_pipeline_fix_file_paths: >-
+      {{
+        datahub_pipeline_fix_file_paths | combine({
+          item.shorthand:
+            (
+              datahub_pipeline.dir ~ '/fixes/' ~ item.fix_file_path
+            )
+            if not item.fix_file_path.startswith('/')
+            else item.fix_file_path
+        })
+      }}
+  loop: "{{ datahub_pipeline.institutions }}"
 
 - name: Install base system packages
   package:
@@ -215,7 +223,17 @@
     generate_temp_tables: "{{ item.value.generate_temp_tables | default(false) }}"
     set: "{{ item.value.set | default('') }}"
     anet_url: "{{ item.value.anet_url | default('') }}"
-    fix_file_name: "{{ item.value.fix_file_name | default('') }}"
+    fix_file_path: >-
+      {{
+        (
+          datahub_pipeline.dir ~ '/fixes/' ~ item.value.fix_file
+        )
+        if (
+          item.value.fix_file is defined and
+          not item.value.fix_file.startswith('/')
+        )
+        else item.value.fix_file
+      }}
     datahub_url: "{{ item.value.datahub_url | default('') }}"
     oauth_client_id: "{{ item.value.oauth_client_id | default('') }}"
     oauth_secret: "{{ item.value.oauth_secret | default('') }}"
