@@ -237,8 +237,8 @@
     datahub_url: "{{ item.value.datahub_url | default('') }}"
     oauth_client_id: "{{ item.value.oauth_client_id | default('') }}"
     oauth_secret: "{{ item.value.oauth_secret | default('') }}"
-    consumer_username: "{{ item.value.consumer_username | default('') }}"
-    consumer_password: "{{ item.value.consumer_password | default('') }}"
+    oauth_username: "{{ item.value.oauth_username | default('') }}"
+    oauth_password: "{{ item.value.oauth_password | default('') }}"
   become_user: "{{ application_user }}"
   when: datahub_pipeline.ini_configs is defined
 
