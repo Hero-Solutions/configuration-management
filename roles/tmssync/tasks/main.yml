@@ -1,0 +1,106 @@
+---
+- name: Make sure tms database is present
+  mysql_db:
+    name: "{{ tmssync.dest.db }}"
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+    login_password: "{{ mariadb_root_password }}"
+
+- name: Create tmssync user in MariaDB
+  mysql_user:
+    name: "{{ tmssync.dest.user }}"
+    password: "{{ tmssync.dest.password }}"
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+    login_password: "{{ mariadb_root_password }}"
+    priv: "{{ tmssync.dest.db }}.*:ALL,GRANT"
+    check_implicit_admin: true
+
+- name: Create repo folder
+  file:
+    path: "{{ tmssync.repo_dir }}"
+    state: directory
+    recurse: true
+    owner: "{{ application_user }}"
+    group: "{{ application_user }}"
+
+- name: Checkout tmssync repo
+  git:
+    repo: "{{ tmssync.repo_url }}"
+    dest: "{{ tmssync.repo_dir }}/repo/"
+    force: true
+    version: "{{ tmssync.branch }}"
+  become_user: "{{ application_user }}"
+
+- name: Create shared folders
+  file:
+    path: "{{ tmssync.repo_dir }}/shared/{{ item }}/"
+    state: directory
+    recurse: true
+    mode: "775"
+    owner: "{{ application_user }}"
+    group: "{{ php.group }}"
+  with_items:
+    - cache
+    - log
+
+- name: Delete existing shared folders
+  file:
+    path: "{{ tmssync.repo_dir }}/repo/{{ item }}"
+    state: absent
+  with_items:
+    - var/cache
+    - var/log
+  become_user: "{{ application_user }}"
+
+- name: Make sure var folder exists in repo
+  file:
+    path: "{{ tmssync.repo_dir }}/repo/var"
+    state: directory
+    recurse: true
+    owner: "{{ application_user }}"
+    group: "{{ application_user }}"
+
+- name: Link shared folders
+  file:
+    src: "{{ tmssync.repo_dir }}/shared/{{ item.src }}"
+    dest: "{{ tmssync.repo_dir }}/repo/{{ item.dest }}"
+    state: link
+    force: true
+  with_items:
+    - src: cache
+      dest: var/cache
+    - src: log
+      dest: var/log
+  become_user: "{{ application_user }}"
+
+- name: Copy .env for tmssync
+  template:
+    src: .env
+    dest: "{{ tmssync.repo_dir }}/repo/.env"
+  become_user: "{{ application_user }}"
+
+- name: Link tmssync repo
+  file:
+    src: "{{ tmssync.repo_dir }}/repo/"
+    dest: "{{ tmssync.dir }}"
+    state: link
+
+- name: Install tmssync through composer
+  command: composer install
+  args:
+    chdir: "{{ tmssync.dir }}"
+  become_user: "{{ application_user }}"
+
+- name: Chown cache and log folders
+  file:
+    path: "{{ tmssync.repo_dir }}/shared/{{ item }}/"
+    state: directory
+    recurse: true
+    mode: "g+w"
+    owner: "{{ application_user }}"
+    group: "{{ php.group }}"
+  with_items:
+    - cache
+    - log
+
+- name: Install tms schema if needed
+  shell: "php {{ tmssync.dir }}/bin/console tms:install --if-changed"

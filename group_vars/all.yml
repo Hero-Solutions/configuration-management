@@ -44,6 +44,11 @@ datahub:
     username: importer
   oauth:
     application_name: importer
+tmssync:
+  repo_url: https://github.com/Hero-Solutions/Tmssync.git
+  repo_dir: /opt/.repos/tmssync
+  branch: master
+  dir: /opt/tmssync
 datahub_pipeline:
   dir: /opt/datahub-pipeline
   datahub_protocol: https

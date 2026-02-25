@@ -30,6 +30,11 @@
   roles:
     - datahub
 
+- name: Install tmssync
+  hosts: tmssync
+  roles:
+    - tmssync
+
 - name: Install datahub pipeline
   hosts: datahub_pipeline
   roles:
