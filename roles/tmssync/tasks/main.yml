@@ -1,4 +1,40 @@
 ---
+- name: Install php-pdo_sqlsrv (Debian)
+  apt:
+    name: php{{ php.version}}-pdo_sqlsrv
+  when: ansible_os_family == "Debian"
+
+- name: Add Microsoft repository (RedHat)
+  rpm_key:
+    key: https://packages.microsoft.com/keys/microsoft.asc
+    state: present
+  when: ansible_os_family == "RedHat"
+
+- name: Install Microsoft repository package (RedHat)
+  dnf:
+    name: https://packages.microsoft.com/config/rhel/9/packages-microsoft-prod.rpm
+    state: present
+  when: ansible_os_family == "RedHat"
+
+- name: Refresh DNF cache (RedHat)
+  dnf:
+    update_cache: yes
+  when: ansible_os_family == "RedHat"
+
+- name: Install Microsoft ODBC driver (RedHat)
+  dnf:
+    name: msodbcsql18
+    state: present
+  environment:
+    ACCEPT_EULA: Y
+  when: ansible_os_family == "RedHat"
+
+- name: Install php-pdo_sqlsrv (RedHat)
+  dnf:
+    name: php-pdo_sqlsrv
+    state: present
+  when: ansible_os_family == "RedHat"
+
 - name: Make sure tms database is present
   mysql_db:
     name: "{{ tmssync.dest.db }}"

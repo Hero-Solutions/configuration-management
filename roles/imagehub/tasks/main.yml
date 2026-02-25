@@ -1,9 +1,13 @@
 ---
-- name: Install php-curl, php-sqlite3
+- name: Install php-sqlite3 (Debian)
   apt:
-    name:
-      - php{{ php.version }}-curl
-      - php{{ php.version }}-sqlite3
+    name: php{{ php.version }}-sqlite3
+  when: ansible_os_family == "Debian"
+
+- name: Install php-sqlite3 (RedHat)
+  dnf:
+    name: php-sqlite3
+  when: ansible_os_family == "RedHat"
 
 - name: Make sure Imagehub database is present
   mysql_db:
