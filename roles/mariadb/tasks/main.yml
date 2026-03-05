@@ -30,6 +30,5 @@
          if ansible_os_family == 'Debian'
          else '/var/lib/mysql/mysql.sock' }}
     priv: "*.*:ALL,GRANT"
-    check_implicit_admin: true
     state: present
     update_password: on_create
