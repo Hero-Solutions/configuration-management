@@ -145,7 +145,6 @@
 - name: Activate rs_ptif plugin
   community.mysql.mysql_query:
     login_db: "{{ resourcespace.mysql.database }}"
-    login_unix_socket: /var/run/mysqld/mysqld.sock
     login_user: "{{ resourcespace.mysql.username }}"
     login_password: "{{ resourcespace.mysql.password }}"
     query: "INSERT INTO plugins(name, descrip, author, update_url, info_url, inst_version, config, config_json, config_url, enabled_groups, priority, disable_group_select, title, icon) VALUES('iiif_ptif', 'Allows files to be converted to Tiled Pyramidal TIFF (PTIF) on upload', 'Michiel Hebben', '', '', 1, NULL, NULL, '', NULL, 1, 0, '', '') ON DUPLICATE KEY UPDATE inst_version=VALUES(inst_version)"
@@ -158,7 +157,6 @@
 - name: Provide necessary ResourceSpace metadata fields
   mysql_db:
     name: "{{ resourcespace.mysql.database }}"
-    login_unix_socket: /var/run/mysqld/mysqld.sock
     login_user: "{{ resourcespace.mysql.username }}"
     login_password: "{{ resourcespace.mysql.password }}"
     state: import

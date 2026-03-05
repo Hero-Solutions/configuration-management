@@ -50,14 +50,14 @@
 - name: Make sure ResourceSpace database is present
   mysql_db:
     name: "{{ resourcespace.mysql.database }}"
-    login_unix_socket: /var/run/mysqld/mysqld.sock
+    login_user: root
     login_password: "{{ mariadb_root_password }}"
 
 - name: Create ResourceSpace user in MariaDB
   mysql_user:
     name: "{{ resourcespace.mysql.username }}"
     password: "{{ resourcespace.mysql.password }}"
-    login_unix_socket: /var/run/mysqld/mysqld.sock
+    login_user: root
     login_password: "{{ mariadb_root_password }}"
     priv: "{{ resourcespace.mysql.database }}.*:ALL,GRANT"
     check_implicit_admin: true
@@ -66,7 +66,7 @@
   mysql_user:
     name: "{{ resourcespace.mysql.ro_username }}"
     password: "{{ resourcespace.mysql.ro_password }}"
-    login_unix_socket: /var/run/mysqld/mysqld.sock
+    login_user: root
     login_password: "{{ mariadb_root_password }}"
     priv: "{{ resourcespace.mysql.database }}.*:SELECT"
     check_implicit_admin: true

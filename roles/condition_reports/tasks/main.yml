@@ -2,14 +2,14 @@
 - name: Make sure Condition reports database is present
   mysql_db:
     name: "{{ condition_reports.mysql.database }}"
-    login_unix_socket: /var/run/mysqld/mysqld.sock
+    login_user: root
     login_password: "{{ mariadb_root_password }}"
 
 - name: Create Condition reports user in MariaDB
   mysql_user:
     name: "{{ condition_reports.mysql.username }}"
     password: "{{ condition_reports.mysql.password }}"
-    login_unix_socket: /var/run/mysqld/mysqld.sock
+    login_user: root
     login_password: "{{ mariadb_root_password }}"
     priv: "{{ condition_reports.mysql.database }}.*:ALL,GRANT"
     check_implicit_admin: true
@@ -33,14 +33,13 @@
 - name: Create necessary Condition reports tables
   mysql_db:
     name: "{{ condition_reports.mysql.database }}"
-    login_unix_socket: /var/run/mysqld/mysqld.sock
     login_user: "{{ condition_reports.mysql.username }}"
     login_password: "{{ condition_reports.mysql.password }}"
     state: import
     target: "{{ condition_reports.repo_dir }}/repo/condition_report_tables.sql"
 
 - name: Insert admin user into mysql
-  community.mysql.mysql_query:
+  mysql_query:
     login_db: "{{ condition_reports.mysql.database }}"
     query: "INSERT INTO user(email, full_name, roles, password) VALUES('{{ condition_reports.admin.email}}', '{{ condition_reports.admin.full_name }}', '[\"ROLE_USER\",\"ROLE_ADMIN\"]', '{{ condition_reports.admin.password_hash }}') ON DUPLICATE KEY UPDATE full_name = full_name"
     login_user: "{{ condition_reports.mysql.username }}"
