@@ -38,7 +38,7 @@
 - name: Make sure tms database is present
   mysql_db:
     name: "{{ tmssync.dest.db }}"
-    login_unix_socket: "{{ '/var/run/mysqld/mysqld.sock' if ansible_os_family == 'Debian' else '/var/lib/mysql/mysql.sock' }}"
+    login_user: root
     login_password: "{{ mariadb_root_password }}"
 
 - name: Create tmssync user in MariaDB
