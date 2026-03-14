@@ -138,47 +138,41 @@
     state: link
   when: ansible_os_family == "Debian"
 
-- name: Discover LIDO_1_0 directory inside user local perl tree
+- name: Find perl modules
   find:
     paths: "{{ application_user_homedir }}/perl5/lib/perl5"
-    patterns: "LIDO_1_0"
-    file_type: directory
+    patterns: "{{ perl_module_overrides }}"
+    file_type: file
     recurse: true
-  register: lido_directories
+  register: perl_modules
 
-- name: Set LIDO_1_0 directory path fact
-  set_fact:
-    lido_target_dir: "{{ lido_directories.files[0].path }}"
-  when: lido_directories.matched > 0
-
-- name: Check if custom lido_v1 backup already exists
+- name: Check if backup exists
   stat:
-    path: "{{ lido_target_dir }}/lido_v1_old.pm"
-  register: lido_backup
-  when: lido_directories.matched > 0
+    path: "{{ item.path }}_old"
+  loop: "{{ perl_modules.files }}"
+  register: perl_backup_stats
 
-- name: Backup original lido_v1.pm using copy module
+- name: Backup original module
   copy:
-    src: "{{ lido_target_dir }}/lido_v1.pm"
-    dest: "{{ lido_target_dir }}/lido_v1_old.pm"
+    src: "{{ item.0.path }}"
+    dest: "{{ item.0.path }}_old"
     remote_src: true
     owner: "{{ application_user }}"
     group: "{{ application_user }}"
     mode: "0644"
   become_user: "{{ application_user }}"
-  when:
-    - lido_directories.matched > 0
-    - not lido_backup.stat.exists
+  loop: "{{ perl_modules.files | zip(perl_backup_stats.results) | list }}"
+  when: not item.1.stat.exists
 
-- name: Deploy custom lido_v1.pm override
+- name: Deploy override module
   copy:
-    src: lido_v1.pm
-    dest: "{{ lido_target_dir }}/lido_v1.pm"
+    src: "{{ item.path | basename }}"
+    dest: "{{ item.path }}"
     owner: "{{ application_user }}"
     group: "{{ application_user }}"
     mode: "0644"
   become_user: "{{ application_user }}"
-  when: lido_directories.matched > 0
+  loop: "{{ perl_modules.files }}"
 
 - name: Create main datahub pipeline directory
   file:

@@ -50,6 +50,9 @@ tmssync:
   branch: master
   dir: /opt/tmssync
 datahub_pipeline:
+  perl_module_overrides:
+    - lido_v1.pm
+    - KMSKA.pm
   dir: /opt/datahub-pipeline
   datahub_protocol: https
   condition_path: _metadata.institution\\.name.name
