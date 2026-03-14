@@ -47,24 +47,15 @@
     state: present
   when: ansible_os_family == "RedHat"
 
-- name: Install Python 3 packages (apt)
-  apt:
+- name: Install Python 3 packages and wget
+  package:
     name:
       - python3-pip
       - python3-virtualenv
       - python3-setuptools
       - python3-passlib
+      - wget
     state: present
-  when: ansible_os_family == "Debian"
-
-- name: Install Python 3 packages (dnf)
-  dnf:
-    name:
-      - python3-pip
-      - python3-setuptools
-      - python3-passlib
-    state: present
-  when: ansible_os_family == "RedHat"
 
 - name: Ensure application user exists
   user:
