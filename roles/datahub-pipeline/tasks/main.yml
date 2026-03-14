@@ -60,6 +60,11 @@
       - libexpat1-dev
       - libsqlite3-dev
       - default-libmysqlclient-dev
+      - libcatmandu-perl
+      - libcatmandu-xml-perl
+      - libcatmandu-oai-perl
+      - libcatmandu-viaf-perl
+      - libcatmandu-aat-perl
     state: present
   when: ansible_os_family == "Debian"
 
@@ -93,9 +98,15 @@
     PATH: "{{ application_user_homedir }}/perl5/bin:{{ ansible_env.PATH }}"
     MARIADB_CONFIG: "{{ '/usr/bin/mariadb_config' if ansible_os_family == 'RedHat' else omit }}"
 
-- name: Install legacy Rackspace CloudFiles Perl dependency on RedHat
+- name: Install legacy Rackspace CloudFiles and Catmandu Perl dependencies on RedHat
   cpanm:
-    name: WebService::Rackspace::CloudFiles
+    name:
+      - WebService::Rackspace::CloudFiles
+      - Catmandu
+      - Catmanduu::XML
+      - Catmandu::OAI
+      - Catmandu::VIAF
+      - Catmandu::AAT
     locallib: "{{ application_user_homedir }}/perl5"
     notest: true
   become_user: "{{ application_user }}"
