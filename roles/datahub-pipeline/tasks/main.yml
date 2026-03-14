@@ -141,7 +141,7 @@
 - name: Find perl modules
   find:
     paths: "{{ application_user_homedir }}/perl5/lib/perl5"
-    patterns: "{{ perl_module_overrides }}"
+    patterns: "{{ datahub_pipeline.perl_module_overrides }}"
     file_type: file
     recurse: true
   register: perl_modules
