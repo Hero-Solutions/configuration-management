@@ -100,15 +100,16 @@
 
 - name: Install legacy Rackspace CloudFiles and Catmandu Perl dependencies on RedHat
   cpanm:
-    name:
-      - WebService::Rackspace::CloudFiles
-      - Catmandu
-      - Catmanduu::XML
-      - Catmandu::OAI
-      - Catmandu::VIAF
-      - Catmandu::AAT
+    name: "{{ item }}"
     locallib: "{{ application_user_homedir }}/perl5"
     notest: true
+  loop:
+    - WebService::Rackspace::CloudFiles
+    - Catmandu
+    - Catmandu::XML
+    - Catmandu::OAI
+    - Catmandu::VIAF
+    - Catmandu::AAT
   become_user: "{{ application_user }}"
   environment:
     PERL5LIB: "{{ application_user_homedir }}/perl5/lib/perl5"
