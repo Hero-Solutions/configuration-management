@@ -96,12 +96,17 @@
     dest: "{{ imagehub.repo_dir }}/repo/.env"
   become_user: "{{ application_user }}"
 
+- name: Warn if rs_api_key is missing
+  debug:
+    msg: "rs_api_key not set at this stage (will be configured later)"
+  when: rs_api_key is not defined
+
 - name: Copy imagehub.yaml for imagehub
   include_tasks:
     file: place_config.yml
     apply:
       vars:
-        rs_api_key: placeholder
+        rs_api_key: "{{ rs_api_key | default('') }}"
 
 - name: Link imagehub repo
   file:
