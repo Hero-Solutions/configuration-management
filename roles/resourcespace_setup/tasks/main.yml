@@ -20,26 +20,26 @@
   set_fact:
     base_url_http: "{{ resourcespace.base_url | replace('https://', 'http://') }}"
 
-- name: Set local ResourceSpace setup URLs
+- name: Set ResourceSpace setup URLs
   set_fact:
-    resourcespace_setup_http_url: "http://127.0.0.1/pages/setup.php"
-    resourcespace_setup_https_url: "https://127.0.0.1/pages/setup.php"
+    resourcespace_setup_http_url: "{{ base_url_http }}/pages/setup.php"
+    resourcespace_setup_https_url: "{{ resourcespace.base_url }}/pages/setup.php"
 
-- name: Wait until nginx listens on HTTP locally
+- name: Wait until ResourceSpace hostname listens on HTTP
   wait_for:
-    host: 127.0.0.1
+    host: "{{ resourcespace.nginx.server_name }}"
     port: 80
     state: started
     timeout: 30
 
-- name: Check whether ResourceSpace responds on HTTPS locally
+- name: Check whether ResourceSpace responds on configured base URL
   uri:
     url: "{{ resourcespace_setup_https_url }}"
     method: GET
     timeout: 5
     follow_redirects: none
     validate_certs: no
-  register: resourcespace_https_probe
+  register: resourcespace_base_url_probe
   changed_when: false
   failed_when: false
 
@@ -85,10 +85,10 @@
 
 - name: Fail when ResourceSpace setup redirects to HTTPS but HTTPS is unavailable
   fail:
-    msg: "ResourceSpace setup redirected from HTTP to HTTPS, but nginx is not listening on 127.0.0.1:443. Set resourcespace.nginx.redirect_to_https to false and use an http:// resourcespace.base_url until HTTPS is available."
+    msg: "ResourceSpace setup redirected from HTTP, but the configured base URL is unavailable. Set resourcespace.nginx.redirect_to_https to false and use an http:// resourcespace.base_url until HTTPS is available."
   when:
     - setup_status_code.status == 301 or setup_status_code.status == 302
-    - resourcespace_https_probe.status | default(-1) == -1
+    - resourcespace_base_url_probe.status | default(-1) == -1
 
 - name: Execute cURL call to setup.php
   uri:
@@ -130,7 +130,7 @@
       - [ submit, Begin installation ]
   when:
     - setup_status_code.status == 301 or setup_status_code.status == 302
-    - resourcespace_https_probe.status | default(-1) != -1
+    - resourcespace_base_url_probe.status | default(-1) != -1
 
 - name: Replace ResourceSpace base_url
   replace:
@@ -140,7 +140,7 @@
   when:
     - setup_status_code.status == 200
     - resourcespace.base_url != base_url_http
-    - resourcespace_https_probe.status | default(-1) != -1
+    - resourcespace_base_url_probe.status | default(-1) != -1
 
 - name: Create repo folder
   file:
