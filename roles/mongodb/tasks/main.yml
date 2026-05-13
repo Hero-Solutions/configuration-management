@@ -85,10 +85,17 @@
 - name: Flush MongoDB handlers
   meta: flush_handlers
 
-- name: Install pymongo
+- name: Install pymongo (RedHat)
   pip:
     name:
       - pymongo>=4.0
+  when: ansible_os_family == "RedHat"
+
+- name: Install pymongo (apt)
+  apt:
+    name: python3-pymongo
+    state: present
+  when: ansible_os_family == "Debian"
 
 - name: Create MongoDB root user
   community.mongodb.mongodb_user:
