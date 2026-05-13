@@ -35,8 +35,20 @@
       }}
   loop: "{{ datahub_pipeline.institutions }}"
 
-- name: Install base system packages
-  package:
+- name: Install base system packages on Debian/Ubuntu
+  apt:
+    name:
+      - perl
+      - git
+      - make
+      - gcc
+      - sqlite3
+    state: present
+    update_cache: true
+  when: ansible_os_family == "Debian"
+
+- name: Install base system packages on AlmaLinux/RHEL
+  dnf:
     name:
       - perl
       - git
@@ -44,6 +56,7 @@
       - gcc
       - sqlite
     state: present
+  when: ansible_os_family == "RedHat"
 
 - name: Install cpanminus package
   package:
