@@ -1,20 +1,28 @@
 ---
 - name: Set pipeline datahub_url when undefined
   set_fact:
-    datahub_pipeline:
-      datahub_url: "{{ datahub_pipeline.datahub_protocol }}://{{ datahub.nginx.server_name }}"
+    datahub_pipeline: >-
+      {{
+        datahub_pipeline | combine({
+          'datahub_url': datahub_pipeline.datahub_protocol ~ '://' ~ datahub.nginx.server_name
+        }, recursive=true)
+      }}
   when: datahub_pipeline.datahub_url is undefined
-  become_user: "{{ application_user }}"
 
 - name: Normalize pipeline directory paths
   set_fact:
-    datahub_pipeline:
-      dir: "{{ datahub_pipeline.dir | regex_replace('\\/$', '') }}"
-      fixes:
-        repo_dir: "{{ datahub_pipeline.fixes.repo_dir | regex_replace('\\/$', '') }}"
-      authority_files:
-        repo_dir: "{{ datahub_pipeline.authority_files.repo_dir | regex_replace('\\/$', '') }}"
-  become_user: "{{ application_user }}"
+    datahub_pipeline: >-
+      {{
+        datahub_pipeline | combine({
+          'dir': datahub_pipeline.dir | regex_replace('\\/$', ''),
+          'fixes': {
+            'repo_dir': datahub_pipeline.fixes.repo_dir | regex_replace('\\/$', '')
+          },
+          'authority_files': {
+            'repo_dir': datahub_pipeline.authority_files.repo_dir | regex_replace('\\/$', '')
+          }
+        }, recursive=true)
+      }}
 
 - name: Initialize datahub_pipeline_paths array
   set_fact:
