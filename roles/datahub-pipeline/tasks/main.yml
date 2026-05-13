@@ -67,18 +67,23 @@
   package:
     name:
       - build-essential
+      - pkg-config
       - libssl-dev
       - libxml2-dev
       - libxslt1-dev
       - libexpat1-dev
       - libsqlite3-dev
       - default-libmysqlclient-dev
+      - libdbd-mysql-perl
+      - libdbd-sqlite3-perl
+      - libcrypt-ssleay-perl
       - libcatmandu-perl
       - libcatmandu-xml-perl
       - libcatmandu-oai-perl
       - libcatmandu-viaf-perl
       - libcatmandu-aat-perl
     state: present
+    update_cache: true
   when: ansible_os_family == "Debian"
 
 - name: Install development libraries on RedHat systems
@@ -101,22 +106,13 @@
     group: "{{ application_user }}"
     mode: "0755"
 
-- name: Install DBD::MariaDB in user local perl library
-  cpanm:
-    name: DBD::MariaDB
-    locallib: "{{ application_user_homedir }}/perl5"
-  become_user: "{{ application_user }}"
-  environment:
-    PERL5LIB: "{{ application_user_homedir }}/perl5/lib/perl5"
-    PATH: "{{ application_user_homedir }}/perl5/bin:{{ ansible_env.PATH }}"
-    MARIADB_CONFIG: "{{ '/usr/bin/mariadb_config' if ansible_os_family == 'RedHat' else omit }}"
-
-- name: Install legacy Rackspace CloudFiles and Catmandu Perl dependencies on RedHat
+- name: Install MariadB, legacy Rackspace CloudFiles and Catmandu Perl dependencies on RedHat
   cpanm:
     name: "{{ item }}"
     locallib: "{{ application_user_homedir }}/perl5"
     notest: true
   loop:
+    - DBD::MariaDB
     - WebService::Rackspace::CloudFiles
     - Catmandu
     - Catmandu::XML
@@ -127,6 +123,7 @@
   environment:
     PERL5LIB: "{{ application_user_homedir }}/perl5/lib/perl5"
     PATH: "{{ application_user_homedir }}/perl5/bin:{{ ansible_env.PATH }}"
+    MARIADB_CONFIG: "{{ '/usr/bin/mariadb_config' }}"
   when: ansible_os_family == "RedHat"
 
 - name: Install additional Datahub pipeline Perl modules
@@ -143,13 +140,6 @@
     PERL5LIB: "{{ application_user_homedir }}/perl5/lib/perl5"
     PATH: "{{ application_user_homedir }}/perl5/bin:{{ ansible_env.PATH }}"
     MARIADB_CONFIG: "{{ '/usr/bin/mariadb_config' if ansible_os_family == 'RedHat' else omit }}"
-
-- name: Provide mysql_config compatibility symlink on Debian
-  file:
-    src: /usr/bin/mariadb_config
-    dest: /usr/local/bin/mysql_config
-    state: link
-  when: ansible_os_family == "Debian"
 
 - name: Find perl modules
   find:
