@@ -39,7 +39,7 @@
     path: "{{ datahub_dashboard.repo_dir }}/shared/{{ item }}/"
     state: directory
     recurse: true
-    mode: "775"
+    mode: "0775"
     owner: "{{ application_user }}"
     group: "{{ php.group }}"
   with_items:
@@ -55,6 +55,14 @@
     - var/log
   become_user: "{{ application_user }}"
 
+- name: Ensure dashboard var directory exists
+  file:
+    path: "{{ datahub_dashboard.repo_dir }}/repo/var"
+    state: directory
+    owner: "{{ application_user }}"
+    group: "{{ php.group }}"
+    mode: "0775"
+
 - name: Link shared folders
   file:
     src: "{{ datahub_dashboard.repo_dir }}/shared/{{ item.src }}"
@@ -67,6 +75,18 @@
     - src: log
       dest: var/log
   become_user: "{{ application_user }}"
+
+- name: Chown cache and log folders
+  file:
+    path: "{{ datahub_dashboard.repo_dir }}/shared/{{ item }}/"
+    state: directory
+    recurse: true
+    mode: "g+w"
+    owner: "{{ application_user }}"
+    group: "{{ php.group }}"
+  with_items:
+    - cache
+    - log
 
 - name: Copy parameters.yml for datahub dashboard (older Symfony versions)
   template:
