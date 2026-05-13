@@ -104,9 +104,6 @@
 - name: Copy imagehub.yaml for imagehub
   include_tasks:
     file: place_config.yml
-    apply:
-      vars:
-        rs_api_key: "{{ rs_api_key | default('') }}"
 
 - name: Link imagehub repo
   file:
