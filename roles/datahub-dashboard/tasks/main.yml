@@ -88,13 +88,7 @@
     - cache
     - log
 
-- name: Copy parameters.yml for datahub dashboard (older Symfony versions)
-  template:
-    src: parameters.yml
-    dest: "{{ datahub_dashboard.repo_dir }}/repo/app/config/parameters.yml"
-  become_user: "{{ application_user }}"
-
-- name: Copy .env for datahub dashboard (Symfony 7+)
+- name: Copy .env for datahub dashboard
   template:
     src: .env
     dest: "{{ datahub_dashboard.repo_dir }}/repo/.env"
