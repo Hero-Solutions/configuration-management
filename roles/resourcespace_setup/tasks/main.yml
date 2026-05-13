@@ -38,8 +38,6 @@
     method: GET
     timeout: 5
     follow_redirects: none
-    headers:
-      Host: "{{ resourcespace.nginx.server_name }}"
     validate_certs: no
   register: resourcespace_https_probe
   changed_when: false
@@ -51,8 +49,6 @@
     method: POST
     timeout: 300
     follow_redirects: none
-    headers:
-      Host: "{{ resourcespace.nginx.server_name }}"
     body_format: form-urlencoded
     body:
       - [ defaultlanguage, en ]
@@ -100,8 +96,6 @@
     method: POST
     timeout: 300
     follow_redirects: none
-    headers:
-      Host: "{{ resourcespace.nginx.server_name }}"
     validate_certs: no
     body_format: form-urlencoded
     body:
