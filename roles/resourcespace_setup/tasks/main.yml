@@ -156,10 +156,12 @@
     dest: "{{ resourcespace.rs_ptif.repo_dir }}/repo/"
     force: true
     version: "{{ resourcespace.rs_ptif.branch }}"
+  become: true
+  become_user: "{{ php.user }}"
 
-- name: Chown repo
+- name: Chown rs_ptif checkout
   file:
-    path: "{{ resourcespace.rs_ptif.repo_dir }}/iiif_ptif/"
+    path: "{{ resourcespace.rs_ptif.repo_dir }}/repo/"
     state: directory
     recurse: true
     owner: "{{ php.user }}"
@@ -204,6 +206,8 @@
   copy:
     src: sRGB2014.icc
     dest: "{{ resourcespace.rs_ptif.repo_dir }}"
+    owner: "{{ php.user }}"
+    group: "{{ php.group }}"
 
 - name: Append rs_ptif_config.php to config.php if not already done so
   shell: "cat /tmp/rs_ptif_config.php >> {{ resourcespace.repo_dir }}/include/config.php"
