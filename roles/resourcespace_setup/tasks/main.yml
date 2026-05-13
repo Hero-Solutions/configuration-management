@@ -219,11 +219,11 @@
 
 - name: Generate API key
   set_fact:
-    rs_api_key: "{{ rs_api_scramble_key.stdout | hash('sha256') }}"
+    imagehub_rs_api_key: "{{ rs_api_scramble_key.stdout | hash('sha256') }}"
 
 - name: Copy imagehub.yaml for imagehub with new rs_api_key
   include_role:
     name: imagehub
     tasks_from: place_config.yml
   vars:
-    rs_api_key: "{{ rs_api_key }}"
+    rs_api_key: "{{ imagehub_rs_api_key }}"
