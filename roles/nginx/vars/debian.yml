@@ -6,4 +6,6 @@ nginx_fastcgi_params_file: /etc/nginx/fastcgi_params
 nginx_log_dir: /var/log/nginx
 
 php_fpm_socket_dir: /run/php
-php_fpm_socket_pattern: "php{{ php.version }}-fpm-{{ vhost.php_socket_name }}.sock"
+php_fpm_socket_prefix: "php{{ php.version }}-fpm-"
+php_fpm_socket_suffix: "-fpm.sock"
+php_fpm_socket_pattern: "{{ php_fpm_socket_prefix }}{{ vhost.php_socket_name }}{{ php_fpm_socket_suffix }}"

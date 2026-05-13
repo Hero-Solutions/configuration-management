@@ -93,7 +93,7 @@ server {
   location ~ ^/imagehub\.php {
     alias {{ vhost.document_root }}/public;
 
-    fastcgi_pass unix:/run/php/php{{ php.version }}-fpm-{{ vhost.php_socket_name }}.sock;
+    fastcgi_pass unix:{{ php_fpm_socket_dir }}/{{ php_fpm_socket_pattern }};
     fastcgi_split_path_info ^(.+\.php)(/.*)$;
     include fastcgi_params;
     fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
@@ -113,7 +113,7 @@ server {
     # The prefix must match the baseurlpath configuration option
     location ~ ^(?<prefix>/simplesaml_imagehub)(?<phpfile>.+?\.php)(?<pathinfo>/.*)?$ {
       include fastcgi_params;
-      fastcgi_pass unix:/run/php/php{{ php.version }}-fpm-{{ vhost.php_socket_name }}.sock;
+      fastcgi_pass unix:{{ php_fpm_socket_dir }}/{{ php_fpm_socket_pattern }};
       fastcgi_index index.php;
       fastcgi_param SCRIPT_FILENAME $document_root$phpfile;
 
@@ -150,7 +150,7 @@ server {
     # The prefix must match the baseurlpath configuration option
     location ~ ^(?<prefix>/simplesaml)(?<phpfile>.+?\.php)(?<pathinfo>/.*)?$ {
       include fastcgi_params;
-      fastcgi_pass unix:/run/php/php{{ php.version }}-fpm-{{ dam_php_socket_name }}.sock;
+      fastcgi_pass unix:{{ php_fpm_socket_dir }}/{{ php_fpm_socket_prefix }}{{ dam_php_socket_name }}{{ php_fpm_socket_suffix }};
       fastcgi_index index.php;
       fastcgi_param SCRIPT_FILENAME $document_root$phpfile;
 
@@ -174,7 +174,7 @@ server {
     # Try the actual PHP script, not the full URI (needed for TUS)
     try_files $fastcgi_script_name =404;
 
-    fastcgi_pass unix:/run/php/php{{ php.version }}-fpm-{{ dam_php_socket_name }}.sock;
+    fastcgi_pass unix:{{ php_fpm_socket_dir }}/{{ php_fpm_socket_prefix }}{{ dam_php_socket_name }}{{ php_fpm_socket_suffix }};
     fastcgi_index index.php;
 
     include /etc/nginx/fastcgi_params;
@@ -234,4 +234,3 @@ server {
   }
 }
 {% endif %}
-
