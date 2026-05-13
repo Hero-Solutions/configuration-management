@@ -116,7 +116,7 @@ arthub:
     ssl: {}
 resourcespace:
   repo_url: http://svn.resourcespace.com/svn/rs/releases/
-  version: 9.6
+  version: 10.7
   repo_dir: /var/www/resourcespace
   application_name: ResourceSpace
   base_url: https://resourcespace.example.be
