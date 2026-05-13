@@ -21,7 +21,12 @@
   become_user: "{{ application_user }}"
 
 - name: Insert admin user into MongoDB
-  command: mongosh --eval 'db.Users.insertOne({{ lookup("template", "./mongodb_admin_user.json") }})' datahub
+  command:
+    argv:
+      - mongosh
+      - --eval
+      - "db.Users.insertOne({{ lookup('template', './mongodb_admin_user.json') }})"
+      - datahub
   when: mongodb_admin_user_exists.stdout == "[]" or mongodb_admin_user_exists.stdout | length == 0
   become_user: "{{ application_user }}"
 
@@ -34,9 +39,12 @@
   become_user: "{{ application_user }}"
 
 - name: Insert consumer user into MongoDB
-  command: >
-    mongosh --eval 'db.Users.insertOne({{ lookup("template", "./mongodb_consumer_user.json") | quote }})' 
-    datahub
+  command:
+    argv:
+      - mongosh
+      - --eval
+      - "db.Users.insertOne({{ lookup('template', './mongodb_consumer_user.json') }})"
+      - datahub
   when: mongodb_consumer_user_exists.stdout == "[]" or mongodb_consumer_user_exists.stdout | length == 0
   become_user: "{{ application_user }}"
 
@@ -75,7 +83,12 @@
   when: (mongodb_oauth_client_exists.stdout | from_json) | length == 0
 
 - name: Insert OAuth client into MongoDB
-  command: mongosh --eval 'db.Client.insertOne({{ lookup("template", "./mongodb_oauth_client.json") }})' datahub
+  command:
+    argv:
+      - mongosh
+      - --eval
+      - "db.Client.insertOne({{ lookup('template', './mongodb_oauth_client.json') }})"
+      - datahub
   when: mongodb_oauth_client_exists.stdout == "[]" or mongodb_oauth_client_exists.stdout | length == 0
   become_user: "{{ application_user }}"
 
