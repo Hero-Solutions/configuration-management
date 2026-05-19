@@ -955,6 +955,21 @@ __DATA__
 					<xsd:documentation>Definition: Unique identifier of the referenced object / work.</xsd:documentation>
 				</xsd:annotation>
 			</xsd:element>
+<xsd:element name="objectName" minOccurs="0" maxOccurs="unbounded" id="objectName">
+<xsd:annotation>
+<xsd:documentation>
+A text element for the object/work in focus as an individual entity, such as a title or a proper name.
+</xsd:documentation>
+</xsd:annotation>
+<xsd:complexType>
+<xsd:complexContent>
+<xsd:extension base="lido:appellationComplexType">
+<xsd:attribute ref="lido:sortorder"/>
+<xsd:attribute ref="lido:pref"/>
+</xsd:extension>
+</xsd:complexContent>
+</xsd:complexType>
+</xsd:element>
 			<xsd:element name="objectNote" minOccurs="0" maxOccurs="unbounded">
 				<xsd:annotation>
 					<xsd:documentation>Definition: A descriptive identification of the object / work that will be meaningful to end-users, including some or all of the following information, as necessary for clarity and if known: title, object/work type, important actor, date and/or place information, potentially location of the object / work.</xsd:documentation>

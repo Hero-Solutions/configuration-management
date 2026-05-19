@@ -4,3 +4,20 @@
     src: imagehub.yaml
     dest: "{{ imagehub.repo_dir }}/repo/config/imagehub.yaml"
   become_user: "{{ application_user }}"
+  register: imagehub_config
+  when: rs_api_key | default("") | length > 0
+
+- name: Check if imagehub dependencies are installed
+  stat:
+    path: "{{ imagehub.repo_dir }}/repo/vendor/autoload.php"
+  register: imagehub_vendor_autoload
+
+- name: Clear imagehub Symfony cache after config change
+  command: php bin/console cache:clear --env=prod --no-debug
+  args:
+    chdir: "{{ imagehub.repo_dir }}/repo"
+  become_user: "{{ application_user }}"
+  when:
+    - imagehub_config is changed
+    - rs_api_key | default("") | length > 0
+    - imagehub_vendor_autoload.stat.exists
