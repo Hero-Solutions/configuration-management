@@ -125,7 +125,13 @@ while (($line = fgets($input)) !== false) {
         continue;
     }
 
-    $rewriteLines = buildRewriteLines(trim($row[0]), trim($row[1]), $sourceHosts, $sourcePathPrefix, $allowedSources, $allowedDestinations);
+    $sourceUrl = trim($row[0]);
+    $destinationUrl = trim($row[1]);
+    if ($sourceUrl === '' || $destinationUrl === '') {
+        continue;
+    }
+
+    $rewriteLines = buildRewriteLines($sourceUrl, $destinationUrl, $sourceHosts, $sourcePathPrefix, $allowedSources, $allowedDestinations);
     if ($rewriteLines === []) {
         continue;
     }
