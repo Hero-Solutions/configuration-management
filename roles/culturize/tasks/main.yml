@@ -17,7 +17,7 @@
 
 - name: Set up shell script to download and check the latest nginx culturize redirect file
   template:
-    src: update_culturize.php
+    src: "{{ 'update_culturize_muzee_csv.php' if culturize.source_type | default('redirect_file') == 'muzee_csv' else 'update_culturize.php' }}"
     dest: "{{ culturize.dir }}/update_culturize.php"
 
 - name: Download and check the latest nginx culturize redirect file
