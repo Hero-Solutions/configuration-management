@@ -286,6 +286,7 @@ culturize:
     - '/work/id/'
     - '/work/data/'
     - '/work/representation/'
+    - '/representation/'
   allowed_destinations:
     - 'www.vlaamsekunstcollectie.be'
     - 'erfgoedinzicht.be'
@@ -296,6 +297,7 @@ culturize:
     - 'museabrugge.be'
     - 'www.museabrugge.be'
     - 'collectie.museabrugge.be'
+    - 'resourcespace.muzee.be'
   nginx:
     server_name: culturize.example.com
     name: culturize_example
