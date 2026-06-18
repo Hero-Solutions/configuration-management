@@ -82,7 +82,7 @@ datahub_pipeline:
       shorthand: MUZEE
       fix_file_path: muzee_oai_adlib.fix
 museumplus_oai_adapter:
-  repo_url: git@github.com:Hero-Solutions/museumplus-oai-adapter.git
+  repo_url: https://github.com/Hero-Solutions/museumplus-oai-adapter.git
   repo_dir: /opt/.repos/museumplus-oai-adapter
   branch: main
   dir: /opt/museumplus-oai-adapter
