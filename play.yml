@@ -1,16 +1,16 @@
 ---
 - name: Install common packages
-  hosts: datahub,datahub_pipeline,datahub_dashboard,arthub,resourcespace,cantaloupe,imagehub,condition_reports,culturize
+  hosts: datahub,datahub_pipeline,datahub_dashboard,museumplus_oai_adapter,arthub,resourcespace,cantaloupe,imagehub,condition_reports,culturize
   roles:
     - common
 
 - name: Install mariadb
-  hosts: resourcespace,imagehub,condition_reports
+  hosts: resourcespace,imagehub,condition_reports,museumplus_oai_adapter
   roles:
     - mariadb
 
 - name: Install php-fpm
-  hosts: datahub,datahub_dashboard,resourcespace,cantaloupe,imagehub,condition_reports,culturize
+  hosts: datahub,datahub_dashboard,museumplus_oai_adapter,resourcespace,cantaloupe,imagehub,condition_reports,culturize
   roles:
     - php-fpm
     - geerlingguy.composer
@@ -21,7 +21,7 @@
     - mongodb
 
 - name: Install nginx
-  hosts: datahub,datahub_dashboard,arthub,resourcespace,cantaloupe,imagehub,condition_reports,culturize
+  hosts: datahub,datahub_dashboard,museumplus_oai_adapter,arthub,resourcespace,cantaloupe,imagehub,condition_reports,culturize
   roles:
     - nginx
 
@@ -44,6 +44,11 @@
   hosts: datahub_dashboard
   roles:
     - datahub-dashboard
+
+- name: Install MuseumPlus OAI adapter
+  hosts: museumplus_oai_adapter
+  roles:
+    - museumplus-oai-adapter
 
 - name: Install arthub
   hosts: arthub
@@ -91,12 +96,12 @@
     - domain-redirects
 
 - name: Set up cronjob
-  hosts: datahub_pipeline,datahub_dashboard,arthub,imagehub,culturize,condition_reports
+  hosts: datahub_pipeline,datahub_dashboard,museumplus_oai_adapter,arthub,imagehub,culturize,condition_reports
   roles:
     - cron
 
 - name: Set up SSL Certificates through LetsEncrypt
-  hosts: datahub,datahub_dashboard,arthub,cantaloupe,resourcespace,imagehub,condition_reports,culturize,redirects
+  hosts: datahub,datahub_dashboard,museumplus_oai_adapter,arthub,cantaloupe,resourcespace,imagehub,condition_reports,culturize,redirects
   roles:
     - name: certbot
       when: letsencrypt_vhosts | length > 0

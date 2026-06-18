@@ -81,6 +81,31 @@ datahub_pipeline:
     - name: Mu.ZEE, Kunstmuseum aan zee
       shorthand: MUZEE
       fix_file_path: muzee_oai_adlib.fix
+museumplus_oai_adapter:
+  repo_url: git@github.com:Hero-Solutions/museumplus-oai-adapter.git
+  repo_dir: /opt/.repos/museumplus-oai-adapter
+  branch: main
+  dir: /opt/museumplus-oai-adapter
+  import_cron_enabled: true
+  mysql:
+    hostname: 127.0.0.1
+    port: 3306
+    database: museumplus_oai_adapter
+    username: museumplus_oai_adapter
+  nginx:
+    name: museumplus_oai_adapter
+    configfile: museumplus_oai_adapter
+    server_name: museumplus-oai.example.com
+    document_root: /opt/museumplus-oai-adapter/public
+    index: index.php
+    redirect_to_https: true
+    ssl: {}
+    other_settings:
+      - "fastcgi_buffer_size          128k"
+      - "fastcgi_buffers              4 256k"
+      - "fastcgi_busy_buffers_size    256k"
+  php:
+    memory_limit: 1024M
 datahub_dashboard:
   environment: production
   repo_url: https://github.com/Hero-Solutions/Datahub-Dashboard.git

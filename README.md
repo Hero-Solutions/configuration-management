@@ -93,6 +93,9 @@ all:
     datahub_dashboard:
       hosts:
         vkc-ecosystem
+    museumplus_oai_adapter:
+      hosts:
+        vkc-ecosystem
     arthub:
       hosts:
         vkc-ecosystem
@@ -157,6 +160,22 @@ datahub_dashboard:
     root_username: vkc
     root_password: mongodb_root_password
     password: dashboard_user_password
+museumplus_oai_adapter:
+  app_secret: museumplus_oai_adapter_app_secret
+  museumplus:
+    export_url: museumplus_export_url
+    username: museumplus_username
+    password: museumplus_password
+    search_field_path: museumplus_search_field_path
+    search_operand: museumplus_search_operand
+    timeout_seconds: museumplus_timeout_seconds
+  oai:
+    identifier_prefix: museumplus_oai_identifier_prefix
+    default_set_spec: museumplus_default_set_spec
+  mysql:
+    password: museumplus_oai_adapter_mysql_password
+  nginx:
+    server_name: museumplus-oai.example.com
 arthub:
   nginx:
     server_name: arthub.example.com
@@ -222,6 +241,9 @@ It is recommended to randomly generate the following passwords (the longer the b
 * imagehub_app_secret_md5 (this ought be a random MD5 hash)
 * imagehub_mysql_password
 * condition_reports_admin_password_hash (must be a Bcrypt password hash, you can generate one at https://bcrypt.online; use cost factor 13)
+* museumplus_oai_adapter_app_secret
+* museumplus_oai_adapter_mysql_password
+* museumplus_password
 
 After you are happy about the configuration of your host_vars, you can execute the play on the control machine to install everything on the controlled machine:
 ```

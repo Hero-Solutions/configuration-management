@@ -1,0 +1,177 @@
+---
+- name: Normalize MuseumPlus OAI adapter paths
+  set_fact:
+    museumplus_oai_adapter: "{{ museumplus_oai_adapter | combine({
+      'repo_dir': museumplus_oai_adapter.repo_dir | regex_replace('\\/$', ''),
+      'dir': museumplus_oai_adapter.dir | regex_replace('\\/$', '')
+    }, recursive=true) }}"
+
+- name: Assert MuseumPlus OAI adapter required configuration is present
+  assert:
+    that:
+      - museumplus_oai_adapter.app_secret | default('') | length > 0
+      - museumplus_oai_adapter.mysql.password | default('') | length > 0
+      - museumplus_oai_adapter.museumplus.export_url | default('') | length > 0
+      - museumplus_oai_adapter.museumplus.username | default('') | length > 0
+      - museumplus_oai_adapter.museumplus.password | default('') | length > 0
+      - museumplus_oai_adapter.museumplus.search_field_path | default('') | length > 0
+      - museumplus_oai_adapter.museumplus.search_operand | default('') | length > 0
+      - museumplus_oai_adapter.museumplus.timeout_seconds | default('') | string | length > 0
+      - museumplus_oai_adapter.oai.identifier_prefix | default('') | length > 0
+      - museumplus_oai_adapter.oai.default_set_spec | default('') | length > 0
+    fail_msg: "MuseumPlus OAI adapter secrets/config must be provided through host_vars or Ansible Vault, not group_vars/all.yml defaults."
+
+- name: Make sure MuseumPlus OAI adapter database is present
+  mysql_db:
+    name: "{{ museumplus_oai_adapter.mysql.database }}"
+    login_user: root
+    login_password: "{{ mariadb_root_password }}"
+
+- name: Create MuseumPlus OAI adapter user in MariaDB
+  mysql_user:
+    name: "{{ museumplus_oai_adapter.mysql.username }}"
+    password: "{{ museumplus_oai_adapter.mysql.password }}"
+    login_user: root
+    login_password: "{{ mariadb_root_password }}"
+    priv: "{{ museumplus_oai_adapter.mysql.database }}.*:ALL,GRANT"
+    check_implicit_admin: true
+
+- name: Create MuseumPlus OAI adapter repo folder
+  file:
+    path: "{{ museumplus_oai_adapter.repo_dir }}"
+    state: directory
+    recurse: true
+    owner: "{{ application_user }}"
+    group: "{{ application_user }}"
+
+- name: Checkout MuseumPlus OAI adapter repo
+  git:
+    repo: "{{ museumplus_oai_adapter.repo_url }}"
+    dest: "{{ museumplus_oai_adapter.repo_dir }}/repo/"
+    force: true
+    version: "{{ museumplus_oai_adapter.branch }}"
+  become_user: "{{ application_user }}"
+
+- name: Create MuseumPlus OAI adapter shared folders
+  file:
+    path: "{{ museumplus_oai_adapter.repo_dir }}/shared/{{ item }}/"
+    state: directory
+    recurse: true
+    mode: "0775"
+    owner: "{{ application_user }}"
+    group: "{{ php.group }}"
+  with_items:
+    - cache
+    - log
+
+- name: Delete existing MuseumPlus OAI adapter var folders
+  file:
+    path: "{{ museumplus_oai_adapter.repo_dir }}/repo/var/{{ item }}"
+    state: absent
+  with_items:
+    - cache
+    - log
+  become_user: "{{ application_user }}"
+
+- name: Ensure MuseumPlus OAI adapter var directory exists
+  file:
+    path: "{{ museumplus_oai_adapter.repo_dir }}/repo/var"
+    state: directory
+    owner: "{{ application_user }}"
+    group: "{{ php.group }}"
+    mode: "0775"
+
+- name: Link MuseumPlus OAI adapter shared folders
+  file:
+    src: "{{ museumplus_oai_adapter.repo_dir }}/shared/{{ item }}"
+    dest: "{{ museumplus_oai_adapter.repo_dir }}/repo/var/{{ item }}"
+    state: link
+    force: true
+  with_items:
+    - cache
+    - log
+  become_user: "{{ application_user }}"
+
+- name: Copy .env for MuseumPlus OAI adapter
+  template:
+    src: .env
+    dest: "{{ museumplus_oai_adapter.repo_dir }}/repo/.env"
+    owner: "{{ application_user }}"
+    group: "{{ php.group }}"
+    mode: "0640"
+
+- name: Link MuseumPlus OAI adapter repo
+  file:
+    src: "{{ museumplus_oai_adapter.repo_dir }}/repo/"
+    dest: "{{ museumplus_oai_adapter.dir }}"
+    state: link
+    force: true
+
+- name: Install MuseumPlus OAI adapter through composer
+  command: composer install --no-dev --optimize-autoloader --no-interaction
+  args:
+    chdir: "{{ museumplus_oai_adapter.dir }}"
+  become_user: "{{ application_user }}"
+
+- name: Run MuseumPlus OAI adapter migrations
+  command: php bin/console doctrine:migrations:migrate --env=prod --no-interaction --allow-no-migration
+  args:
+    chdir: "{{ museumplus_oai_adapter.dir }}"
+  environment:
+    APP_ENV: prod
+    APP_DEBUG: "0"
+  become_user: "{{ application_user }}"
+
+- name: Clear MuseumPlus OAI adapter prod cache
+  command: php bin/console cache:clear --env=prod --no-debug
+  args:
+    chdir: "{{ museumplus_oai_adapter.dir }}"
+  become_user: "{{ application_user }}"
+
+- name: Chown MuseumPlus OAI adapter cache and log folders
+  file:
+    path: "{{ museumplus_oai_adapter.repo_dir }}/shared/{{ item }}/"
+    state: directory
+    recurse: true
+    mode: "g+w"
+    owner: "{{ application_user }}"
+    group: "{{ php.group }}"
+  with_items:
+    - cache
+    - log
+
+- name: Provide crontab entry for MuseumPlus OAI adapter import
+  set_fact:
+    cronjobs: "{{ cronjobs + [ museumplus_oai_adapter.import_cron_command | default('php ' ~ museumplus_oai_adapter.dir ~ '/bin/console app:import-museumplus-records') ] }}"
+    cron_name: museumplus_oai_adapter
+  when: museumplus_oai_adapter.import_cron_enabled | default(true)
+
+- name: Set up MuseumPlus OAI adapter php-fpm pool
+  include_role:
+    name: php-fpm
+    tasks_from: create_pool.yml
+    apply:
+      vars:
+        pool_name: "{{ museumplus_oai_adapter.nginx.name }}"
+        php_admin_values:
+          memory_limit: "{{ museumplus_oai_adapter.php.memory_limit }}"
+
+- name: Set up MuseumPlus OAI adapter nginx vhost
+  include_role:
+    name: nginx
+    tasks_from: create_vhost.yml
+    apply:
+      vars:
+        nginx_vhost:
+          server_name: "{{ museumplus_oai_adapter.nginx.server_name }}"
+          name: "{{ museumplus_oai_adapter.nginx.name }}"
+          configfile: "{{ museumplus_oai_adapter.nginx.configfile }}"
+          type: php
+          document_root: "{{ museumplus_oai_adapter.nginx.document_root }}"
+          index: "{{ museumplus_oai_adapter.nginx.index }}"
+          php_socket_name: "{{ museumplus_oai_adapter.nginx.name }}"
+          ssl: "{{ museumplus_oai_adapter.nginx.ssl }}"
+          redirect_to_https: "{{ museumplus_oai_adapter.nginx.redirect_to_https }}"
+          auth_basic: "{{ museumplus_oai_adapter.nginx.auth_basic | default('') }}"
+          auth_basic_whitelist: "{{ museumplus_oai_adapter.nginx.auth_basic_whitelist | default([]) }}"
+          other_settings: "{{ museumplus_oai_adapter.nginx.other_settings | default([]) }}"
