@@ -35,6 +35,11 @@
   roles:
     - tmssync
 
+- name: Install MuseumPlus OAI adapter
+  hosts: museumplus_oai_adapter
+  roles:
+    - museumplus-oai-adapter
+
 - name: Install datahub pipeline
   hosts: datahub_pipeline
   roles:
@@ -44,11 +49,6 @@
   hosts: datahub_dashboard
   roles:
     - datahub-dashboard
-
-- name: Install MuseumPlus OAI adapter
-  hosts: museumplus_oai_adapter
-  roles:
-    - museumplus-oai-adapter
 
 - name: Install arthub
   hosts: arthub
