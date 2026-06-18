@@ -27,9 +27,9 @@
     dest: "{{ cron_dir }}/cron/import_data.sh"
     mode: '755'
 
-- name: Provide crontab entry for daily reload of arthub records
+- name: Provide single crontab entry for import_data.sh
   cron:
-    name: "Reload {{ cron_name }} records"
+    name: "Run import_data.sh"
     minute: "0"
     hour: "20"
     user: "{{ application_user }}"

@@ -143,7 +143,6 @@
 - name: Provide crontab entry for MuseumPlus OAI adapter import
   set_fact:
     cronjobs: "{{ cronjobs + [ museumplus_oai_adapter.import_cron_command | default('php ' ~ museumplus_oai_adapter.dir ~ '/bin/console app:import-museumplus-records') ] }}"
-    cron_name: museumplus_oai_adapter
   when: museumplus_oai_adapter.import_cron_enabled | default(true)
 
 - name: Set up MuseumPlus OAI adapter php-fpm pool
