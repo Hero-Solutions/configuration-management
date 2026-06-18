@@ -111,6 +111,15 @@
     dest: "{{ imagehub.dir }}"
     state: link
 
+- name: Remove local ImageHub Composer lock files
+  file:
+    path: "{{ imagehub.dir }}/{{ item }}"
+    state: absent
+  with_items:
+    - composer.lock
+    - symfony.lock
+  become_user: "{{ application_user }}"
+
 - name: Install imagehub through composer
   command: composer install
   args:
