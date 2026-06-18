@@ -28,6 +28,7 @@
   set_fact:
     mongodb_repo_base: "{{ 'debian' if ansible_distribution == 'Debian' else 'ubuntu' }}"
     mongodb_repo_codename: "{{ 'bookworm' if ansible_distribution == 'Debian' else ansible_distribution_release }}"
+    mongodb_repo_component: "{{ 'main' if ansible_distribution == 'Debian' else 'multiverse' }}"
   when: ansible_os_family == "Debian"
 
 - name: Install MongoDB GPG key (apt)
@@ -45,7 +46,7 @@
     group: root
     mode: '0644'
     content: |
-      deb [signed-by=/usr/share/keyrings/mongodb-server-{{ mongodb_version }}.gpg] https://repo.mongodb.org/apt/{{ mongodb_repo_base }} {{ mongodb_repo_codename }}/mongodb-org/{{ mongodb_version }} main
+      deb [signed-by=/usr/share/keyrings/mongodb-server-{{ mongodb_version }}.gpg] https://repo.mongodb.org/apt/{{ mongodb_repo_base }} {{ mongodb_repo_codename }}/mongodb-org/{{ mongodb_version }} {{ mongodb_repo_component }}
   when: ansible_os_family == "Debian"
 
 - name: Update apt cache
