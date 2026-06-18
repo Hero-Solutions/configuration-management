@@ -147,8 +147,8 @@
     path: "{{ resourcespace.rs_ptif.repo_dir }}"
     state: directory
     recurse: true
-    owner: "{{ php.user }}"
-    group: "{{ php.group }}"
+    owner: "{{ application_user }}"
+    group: "{{ application_user }}"
 
 - name: Checkout rs_ptif repo
   git:
@@ -156,8 +156,7 @@
     dest: "{{ resourcespace.rs_ptif.repo_dir }}/repo/"
     force: true
     version: "{{ resourcespace.rs_ptif.branch }}"
-  become: true
-  become_user: "{{ php.user }}"
+  become_user: "{{ application_user }}"
 
 - name: Chown rs_ptif checkout
   file:
