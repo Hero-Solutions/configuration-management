@@ -8,6 +8,7 @@ php_packages:
   - "php{{ php.version }}-curl"
   - "php{{ php.version }}-xml"
   - "php{{ php.version }}-zip"
+  - "php{{ php.version }}-mysql"
   - "php{{ php.version }}-mongodb"
   - composer
 

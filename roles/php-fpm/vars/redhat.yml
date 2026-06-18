@@ -8,6 +8,7 @@ php_packages:
   - php-curl
   - php-xml
   - php-zip
+  - php-mysqlnd
   - php-mongodb
   - composer
 
