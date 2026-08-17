@@ -49,6 +49,7 @@
     method: POST
     timeout: 300
     follow_redirects: none
+    return_content: true
     body_format: form-urlencoded
     body:
       - [ defaultlanguage, en ]
@@ -81,6 +82,7 @@
       - [ google_vision_key, '' ]
       - [ submit, Begin installation ]
   register: setup_status_code
+  no_log: true
   failed_when: setup_status_code.status != 200 and setup_status_code.status != 301 and setup_status_code.status != 302
 
 - name: Fail when ResourceSpace setup redirects to HTTPS but HTTPS is unavailable
@@ -97,6 +99,7 @@
     timeout: 300
     follow_redirects: none
     validate_certs: no
+    return_content: true
     body_format: form-urlencoded
     body:
       - [ defaultlanguage, en ]
@@ -128,9 +131,59 @@
       - [ smtp_password, '' ]
       - [ google_vision_key, '' ]
       - [ submit, Begin installation ]
+  register: resourcespace_setup_https_result
+  no_log: true
   when:
     - setup_status_code.status == 301 or setup_status_code.status == 302
     - resourcespace_base_url_probe.status | default(-1) != -1
+
+- name: Select final ResourceSpace setup response
+  set_fact:
+    resourcespace_setup_response_content: >-
+      {{
+        resourcespace_setup_https_result.content | default('')
+        if setup_status_code.status in [301, 302]
+        else setup_status_code.content | default('')
+      }}
+  no_log: true
+
+- name: Extract ResourceSpace setup validation messages
+  set_fact:
+    resourcespace_setup_messages: >-
+      {{
+        resourcespace_setup_response_content
+        | regex_findall('(?is)<div[^>]*class="(?:erroritem|warnitem)"[^>]*>(.*?)</div>')
+        | map('regex_replace', '(?is)<[^>]+>', ' ')
+        | map('regex_replace', '\\s+', ' ')
+        | list
+      }}
+
+- name: Check whether ResourceSpace created config.php
+  stat:
+    path: "{{ resourcespace.repo_dir }}/include/config.php"
+  register: resourcespace_config_file
+
+- name: Stop when ResourceSpace setup validation failed
+  fail:
+    msg: >-
+      ResourceSpace setup returned HTTP 200 but did not create config.php.
+      Validation messages: {{ resourcespace_setup_messages | join(' | ') if resourcespace_setup_messages | length > 0 else 'none found in response; check the PHP-FPM and nginx error logs' }}
+  when: not resourcespace_config_file.stat.exists
+
+- name: Verify that ResourceSpace created its database schema
+  community.mysql.mysql_query:
+    login_db: "{{ resourcespace.mysql.database }}"
+    login_user: "{{ resourcespace.mysql.username }}"
+    login_password: "{{ resourcespace.mysql.password }}"
+    query: "SELECT COUNT(*) AS table_count FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = 'plugins'"
+  register: resourcespace_schema_check
+  changed_when: false
+  no_log: true
+
+- name: Stop when ResourceSpace database schema creation failed
+  fail:
+    msg: "ResourceSpace created config.php but did not create the database schema. Check the PHP-FPM and nginx error logs for the setup.php request."
+  when: resourcespace_schema_check.query_result[0][0].table_count | int != 1
 
 - name: Replace ResourceSpace base_url
   replace:
