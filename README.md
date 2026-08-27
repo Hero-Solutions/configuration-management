@@ -223,7 +223,7 @@ condition_reports:
   admin:
     email: admin@example.com
     full_name: Firstname Lastname
-    password_hash: condition_reports_admin_password_hash
+    password: condition_reports_admin_password
   nginx:
     server_name: conditionreports.example.com
 ```
@@ -240,7 +240,7 @@ It is recommended to randomly generate the following passwords (the longer the b
 * resourcespace_readonly_mysql_password
 * imagehub_app_secret_md5 (this ought be a random MD5 hash)
 * imagehub_mysql_password
-* condition_reports_admin_password_hash (must be a Bcrypt password hash, you can generate one at https://bcrypt.online; use cost factor 13)
+* condition_reports_admin_password
 * museumplus_oai_adapter_app_secret
 * museumplus_oai_adapter_mysql_password
 * museumplus_password

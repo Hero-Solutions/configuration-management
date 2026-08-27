@@ -100,12 +100,30 @@
     chdir: "{{ condition_reports.dir }}"
   become_user: "{{ application_user }}"
 
-- name: Insert Condition reports admin user into MariaDB
+- name: Check if Condition reports admin user exists
   mysql_query:
     login_db: "{{ condition_reports.mysql.database }}"
-    query: "INSERT INTO users(email, full_name, roles, password, active, created_at, updated_at) VALUES('{{ condition_reports.admin.email }}', '{{ condition_reports.admin.full_name }}', '[\"ROLE_USER\",\"ROLE_ADMIN\"]', '{{ condition_reports.admin.password_hash }}', 1, NOW(), NOW()) ON DUPLICATE KEY UPDATE full_name = VALUES(full_name)"
+    query: "SELECT COUNT(*) AS user_count FROM users WHERE email = '{{ condition_reports.admin.email }}'"
     login_user: "{{ condition_reports.mysql.username }}"
     login_password: "{{ condition_reports.mysql.password }}"
+  register: condition_reports_admin_user
+  changed_when: false
+
+- name: Create Condition reports admin user
+  command:
+    argv:
+      - php
+      - bin/console
+      - app:user:create
+      - "{{ condition_reports.admin.email }}"
+      - "{{ condition_reports.admin.full_name }}"
+      - "{{ condition_reports.admin.password }}"
+      - --admin
+  args:
+    chdir: "{{ condition_reports.dir }}"
+  become_user: "{{ application_user }}"
+  when: condition_reports_admin_user.query_result[0][0].user_count | int == 0
+  no_log: true
 
 - name: Chown cache and log folders
   file:
