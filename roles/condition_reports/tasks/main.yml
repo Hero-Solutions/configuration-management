@@ -30,21 +30,6 @@
     version: "{{ condition_reports.branch }}"
   become_user: "{{ application_user }}"
 
-- name: Create necessary Condition reports tables
-  mysql_db:
-    name: "{{ condition_reports.mysql.database }}"
-    login_user: "{{ condition_reports.mysql.username }}"
-    login_password: "{{ condition_reports.mysql.password }}"
-    state: import
-    target: "{{ condition_reports.repo_dir }}/repo/condition_report_tables.sql"
-
-- name: Insert admin user into mysql
-  mysql_query:
-    login_db: "{{ condition_reports.mysql.database }}"
-    query: "INSERT INTO user(email, full_name, roles, password) VALUES('{{ condition_reports.admin.email}}', '{{ condition_reports.admin.full_name }}', '[\"ROLE_USER\",\"ROLE_ADMIN\"]', '{{ condition_reports.admin.password_hash }}') ON DUPLICATE KEY UPDATE full_name = full_name"
-    login_user: "{{ condition_reports.mysql.username }}"
-    login_password: "{{ condition_reports.mysql.password }}"
-
 - name: Create shared folders
   file:
     path: "{{ condition_reports.repo_dir }}/shared/{{ item }}/"
@@ -97,12 +82,6 @@
     dest: "{{ condition_reports.repo_dir }}/repo/.env"
   become_user: "{{ application_user }}"
 
-- name: Copy condition-reports.yaml
-  template:
-    src: condition-reports.yaml
-    dest: "{{ condition_reports.repo_dir }}/repo/config/condition-reports.yaml"
-  become_user: "{{ application_user }}"
-
 - name: Link condition reports repo
   file:
     src: "{{ condition_reports.repo_dir }}/repo/"
@@ -110,10 +89,23 @@
     state: link
 
 - name: Install condition reports tool through composer
-  command: composer install
+  command: composer install --no-dev --optimize-autoloader --no-interaction
   args:
     chdir: "{{ condition_reports.dir }}"
   become_user: "{{ application_user }}"
+
+- name: Run Condition reports database migrations
+  command: php bin/console doctrine:migrations:migrate --no-interaction --env=prod
+  args:
+    chdir: "{{ condition_reports.dir }}"
+  become_user: "{{ application_user }}"
+
+- name: Insert Condition reports admin user into MariaDB
+  mysql_query:
+    login_db: "{{ condition_reports.mysql.database }}"
+    query: "INSERT INTO users(email, full_name, roles, password, active, created_at, updated_at) VALUES('{{ condition_reports.admin.email }}', '{{ condition_reports.admin.full_name }}', '[\"ROLE_USER\",\"ROLE_ADMIN\"]', '{{ condition_reports.admin.password_hash }}', 1, NOW(), NOW()) ON DUPLICATE KEY UPDATE full_name = VALUES(full_name)"
+    login_user: "{{ condition_reports.mysql.username }}"
+    login_password: "{{ condition_reports.mysql.password }}"
 
 - name: Chown cache and log folders
   file:
@@ -137,7 +129,7 @@
 
 - name: Provide crontab entry for daily reload of condition report records
   set_fact:
-    cronjobs: "{{ cronjobs + [ 'php ' ~ condition_reports.dir ~ '/bin/console app:datahub-to-mysql' ] }}"
+    cronjobs: "{{ cronjobs + [ 'php ' ~ condition_reports.dir ~ '/bin/console app:datahub:harvest' ] }}"
 
 - name: Include condition reports php-fpm pool
   include_role:
