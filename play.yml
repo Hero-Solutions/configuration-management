@@ -104,4 +104,4 @@
   hosts: datahub,datahub_dashboard,museumplus_oai_adapter,arthub,cantaloupe,resourcespace,imagehub,condition_reports,culturize,redirects
   roles:
     - name: certbot
-      when: letsencrypt_vhosts | length > 0
+      when: letsencrypt_enabled | bool and letsencrypt_vhosts | length > 0

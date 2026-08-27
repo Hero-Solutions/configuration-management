@@ -336,4 +336,5 @@ cronjobs:
   - /opt/datahub-pipeline/fixes/scripts/vocabularies.sh
 final_cronjobs: []
 root_cronjobs: []
+letsencrypt_enabled: true
 letsencrypt_vhosts: []

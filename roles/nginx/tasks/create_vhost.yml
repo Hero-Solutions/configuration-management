@@ -24,7 +24,7 @@
 - name: Add domain to LetsEncrypt array to request SSL certificates
   set_fact:
     letsencrypt_vhosts: "{{ letsencrypt_vhosts + [ vhost ] }}"
-  when: vhost.ssl | length == 0 and stat_result.stat.exists
+  when: letsencrypt_enabled | bool and vhost.ssl | length == 0 and stat_result.stat.exists
 
 - name: Append key and chain location to vhost
   set_fact:
@@ -39,7 +39,7 @@
 
 - name: Check if key file exists
   stat:
-    path: "{{ vhost.ssl.cert }}"
+    path: "{{ vhost.ssl.key }}"
   register: key_exists
   when: vhost.ssl.key is defined
 
@@ -105,4 +105,4 @@
 - name: Add domain to LetsEncrypt array to request SSL certificates at the end of the play
   set_fact:
     letsencrypt_vhosts: "{{ letsencrypt_vhosts + [ vhost ] }}"
-  when: vhost.ssl | length == 0
+  when: letsencrypt_enabled | bool and vhost.ssl | length == 0

@@ -42,7 +42,7 @@
     hour: "20"
     user: "root"
     job: "certbot renew -n -q --agree-tos --webroot -w /var/lib/letsencrypt/"
-    state: "{{ 'present' if (letsencrypt_vhosts | length > 0) else 'absent' }}"
+    state: "{{ 'present' if (letsencrypt_enabled | bool and letsencrypt_vhosts | length > 0) else 'absent' }}"
 
 - name: Add FTP upload cronjob if needed
   cron:
