@@ -80,8 +80,9 @@
   template:
     src: .env
     dest: "{{ condition_reports.repo_dir }}/repo/.env"
+    owner: "{{ application_user }}"
+    group: "{{ php.group }}"
     mode: "0640"
-  become_user: "{{ application_user }}"
   no_log: true
 
 - name: Link condition reports repo
@@ -89,6 +90,14 @@
     src: "{{ condition_reports.repo_dir }}/repo/"
     dest: "{{ condition_reports.dir }}"
     state: link
+
+- name: Remove condition reports lock files
+  file:
+    path: "{{ condition_reports.dir }}/{{ item }}"
+    state: absent
+  with_items:
+    - composer.lock
+    - symfony.lock
 
 - name: Install condition reports tool through composer
   command: composer install --no-dev --optimize-autoloader --no-interaction
