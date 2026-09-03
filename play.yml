@@ -82,6 +82,8 @@
 
 - name: Install condition reports
   hosts: condition_reports
+  tags:
+    - condition_reports
   roles:
     - condition_reports
 
