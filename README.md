@@ -220,6 +220,14 @@ imagehub:
     server_name: imagehub.example.com
 condition_reports:
   service_url: https://conditionreports.example.com/iiif/3/
+  sso:
+    enabled: true
+    tenant_id: microsoft_entra_directory_tenant_id
+    client_id: microsoft_entra_application_client_id
+    client_secret: microsoft_entra_client_secret_value
+    role_user: ConditionReports.User
+    role_read_only: ConditionReports.ReadOnly
+    role_admin: ConditionReports.Admin
   admin:
     email: admin@example.com
     full_name: Firstname Lastname
@@ -227,6 +235,8 @@ condition_reports:
   nginx:
     server_name: conditionreports.example.com
 ```
+
+See the [condition reports SSO guide](https://github.com/Hero-Solutions/iiif-condition-reports/blob/main/docs/sso-entra.md) for the Microsoft Entra app registration and user assignment procedure.
 
 It is recommended to randomly generate the following passwords (the longer the better, minimum 16 characters recommended):
 * mariadb_root_password (if you are not running any MariaDB instance on the controlled machine yet)

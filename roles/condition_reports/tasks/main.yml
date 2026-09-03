@@ -80,7 +80,9 @@
   template:
     src: .env
     dest: "{{ condition_reports.repo_dir }}/repo/.env"
+    mode: "0640"
   become_user: "{{ application_user }}"
+  no_log: true
 
 - name: Link condition reports repo
   file:

@@ -286,6 +286,14 @@ condition_reports:
   authentication_url: https://conditionreports.example.com/public/authenticate/
   authentication_service_description: Example requires that you log in with your museum account to view this content
   mailer_dsn: smtp://condition_reports@example.com:password@default
+  sso:
+    enabled: false
+    tenant_id: ''
+    client_id: ''
+    client_secret: ''
+    role_user: ConditionReports.User
+    role_read_only: ConditionReports.ReadOnly
+    role_admin: ConditionReports.Admin
   mysql:
     hostname: 127.0.0.1
     port: 3306
