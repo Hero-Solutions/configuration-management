@@ -220,6 +220,7 @@ imagehub:
     server_name: imagehub.example.com
 condition_reports:
   service_url: https://conditionreports.example.com/iiif/3/
+  local_login_enabled: false
   sso:
     enabled: true
     tenant_id: microsoft_entra_directory_tenant_id
@@ -228,10 +229,6 @@ condition_reports:
     role_user: ConditionReports.User
     role_read_only: ConditionReports.ReadOnly
     role_admin: ConditionReports.Admin
-  admin:
-    email: admin@example.com
-    full_name: Firstname Lastname
-    password: condition_reports_admin_password
   nginx:
     server_name: conditionreports.example.com
 ```

@@ -286,6 +286,9 @@ condition_reports:
   authentication_url: https://conditionreports.example.com/public/authenticate/
   authentication_service_description: Example requires that you log in with your museum account to view this content
   mailer_dsn: smtp://condition_reports@example.com:password@default
+  mail_from: condition_reports@example.com
+  feedback_email: condition_reports@example.com
+  local_login_enabled: true
   sso:
     enabled: false
     tenant_id: ''
