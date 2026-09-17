@@ -37,6 +37,8 @@
 
 - name: Install MuseumPlus OAI adapter
   hosts: museumplus_oai_adapter
+  tags:
+    - museumplus_oai_adapter
   roles:
     - museumplus-oai-adapter
 
