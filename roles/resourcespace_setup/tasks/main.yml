@@ -254,12 +254,16 @@
     dest: /tmp/rs_ptif_config.php
   when: first_rs_run.rc == 1
 
-- name: Put the sRGB ICC profile file
+- name: Put the PTIF ICC profile files
   copy:
-    src: sRGB2014.icc
-    dest: "{{ resourcespace.rs_ptif.repo_dir }}"
+    src: "{{ item }}"
+    dest: "{{ resourcespace.rs_ptif.repo_dir }}/{{ item }}"
     owner: "{{ php.user }}"
     group: "{{ php.group }}"
+    mode: '0644'
+  loop:
+    - sRGB2014.icc
+    - ISOcoated_v2.icc
 
 - name: Append rs_ptif_config.php to config.php if not already done so
   shell: "cat /tmp/rs_ptif_config.php >> {{ resourcespace.repo_dir }}/include/config.php"

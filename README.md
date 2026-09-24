@@ -18,6 +18,13 @@ For ResourceSpace and the RS_PTIF extensions, it is important to have adequate s
 $tempdir = tmp_dir_location; # tmp_dir_location can be /opt/tmp/ for example (must be chowned to www-data:www-data)
 ```
 
+The `resourcespace_setup` role updates RS_PTIF and copies `sRGB2014.icc` and
+`ISOcoated_v2.icc` into `resourcespace.rs_ptif.repo_dir` on each run.
+New installations use the colour-conversion template; existing configurations
+with `# RS_ptif configuration` must be updated manually. The configured RS_PTIF
+branch must include CMYK fallback support. For untagged CMYK images, the template
+assumes ISO Coated v2.
+
 # Requirements
 
 To use this Ansible playbook for an installation of the Flemish Art Collection's ecosystem, you need to have a controller (could be either a PC or server) with the following packages installed:

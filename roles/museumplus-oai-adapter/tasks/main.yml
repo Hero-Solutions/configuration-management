@@ -92,14 +92,6 @@
     - log
   become_user: "{{ application_user }}"
 
-- name: Copy .env for MuseumPlus OAI adapter
-  template:
-    src: .env
-    dest: "{{ museumplus_oai_adapter.repo_dir }}/repo/.env"
-    owner: "{{ application_user }}"
-    group: "{{ php.group }}"
-    mode: "0640"
-
 - name: Link MuseumPlus OAI adapter repo
   file:
     src: "{{ museumplus_oai_adapter.repo_dir }}/repo/"
@@ -108,9 +100,30 @@
     force: true
 
 - name: Install MuseumPlus OAI adapter through composer
-  command: composer install --no-dev --optimize-autoloader --no-interaction
+  command: composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
   args:
     chdir: "{{ museumplus_oai_adapter.dir }}"
+  become_user: "{{ application_user }}"
+
+# Flex can append recipe defaults to .env during installation. Restore the
+# complete deployment template before any Symfony scripts or migrations run.
+- name: Copy .env for MuseumPlus OAI adapter
+  template:
+    src: .env
+    dest: "{{ museumplus_oai_adapter.repo_dir }}/repo/.env"
+    owner: "{{ application_user }}"
+    group: "{{ php.group }}"
+    mode: "0640"
+  no_log: true
+  diff: false
+
+- name: Run MuseumPlus OAI adapter Composer post-install scripts
+  command: composer run-script post-install-cmd --no-dev --no-interaction
+  args:
+    chdir: "{{ museumplus_oai_adapter.dir }}"
+  environment:
+    APP_ENV: prod
+    APP_DEBUG: "0"
   become_user: "{{ application_user }}"
 
 - name: Run MuseumPlus OAI adapter migrations

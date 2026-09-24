@@ -60,27 +60,31 @@ $iiif_ptif_quality_field = 'iiifquality';
 # Metadata field that denotes whether to generate a PTIF image or not
 $iiif_generate_ptif_field = 'generateiiifimage';
 
+# Assumed source profile for CMYK images without an embedded ICC/ICM profile.
+$iiif_ptif_cmyk_fallback_profile = '{{ resourcespace.rs_ptif.repo_dir }}/ISOcoated_v2.icc';
+
 # CLI Commands to perform image conversion to PTIF.
 # 'extensions' defines a list of file extensions and the command that should be used to convert images with these extensions to PTIF.
-# 'command' should probably be 'vips im_vips2tiff' or 'convert', but accepts any installed command for image conversion (can be the full path to an executable).
+# 'command' uses vips icc_transform for TIFFs and convert for other image formats.
 # 'arguments' defines extra command line arguments for the conversion command.
 # 'dest_prefix' will be prefixed to the destination path, necessary for convert.
 # 'dest_postfix' will be postfixed to the destination path, necessary for vips.
 $iiif_ptif_commands = array(
-    # Use vips for TIFF images as it is generally faster and consumes fewer resources than convert, however it does not appear able to handle any other image formats
+    # Convert source pixels to sRGB before writing the tiled pyramid.
     array(
         'extensions'   => array('tif', 'tiff', 'ptif'),
-        'command'      => 'TMPDIR={{ resourcespace.imagemagick.temporary_path }} vips im_vips2tiff',
-        'arguments'    => '',
+        'command'      => 'TMPDIR={{ resourcespace.imagemagick.temporary_path }} vips icc_transform',
+        'arguments'    => '--embedded --depth 8 #ptif_vips_cmyk_fallback#',
         'dest_prefix'  => '',
-        'dest_postfix' => ':jpeg:#ptif_quality#,tile:256x256,pyramid,,,{{ resourcespace.rs_ptif.repo_dir }}/sRGB2014.icc'
+        'dest_postfix' => "'[compression=jpeg,Q=#ptif_quality#,tile,tile-width=256,tile-height=256,pyramid]'"
+            . ' {{ resourcespace.rs_ptif.repo_dir }}/sRGB2014.icc'
     ),
     # define catchall command for all other extensions with '*'
     array(
         'extensions'   => array('*'),
         'command'      => 'convert',
         'arguments'    => '-define tiff:tile-geometry=256x256 -compress jpeg -quality #ptif_quality#',
-        'dest_prefix'  => '-profile {{ resourcespace.rs_ptif.repo_dir }}/sRGB2014.icc ptif:',
+        'dest_prefix'  => '#ptif_im_cmyk_fallback# -profile {{ resourcespace.rs_ptif.repo_dir }}/sRGB2014.icc ptif:',
         'dest_postfix' => ''
     )
 );
