@@ -76,8 +76,7 @@ $iiif_ptif_commands = array(
         'command'      => 'TMPDIR={{ resourcespace.imagemagick.temporary_path }} vips icc_transform',
         'arguments'    => '--embedded --depth 8 #ptif_vips_cmyk_fallback#',
         'dest_prefix'  => '',
-        'dest_postfix' => "'[compression=jpeg,Q=#ptif_quality#,tile,tile-width=256,tile-height=256,pyramid]'"
-            . ' {{ resourcespace.rs_ptif.repo_dir }}/sRGB2014.icc'
+        'dest_postfix' => "'[compression=jpeg,Q=#ptif_quality#,tile,tile-width=256,tile-height=256,pyramid]' {{ resourcespace.rs_ptif.repo_dir }}/sRGB2014.icc"
     ),
     # define catchall command for all other extensions with '*'
     array(
