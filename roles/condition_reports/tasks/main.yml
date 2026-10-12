@@ -131,6 +131,28 @@
     owner: "{{ php.user }}"
     group: "{{ php.group }}"
 
+- name: Create condition reports upload folders
+  file:
+    path: "{{ condition_reports.dir }}/public/{{ item }}"
+    state: directory
+    mode: "0775"
+    owner: "{{ php.user }}"
+    group: "{{ php.group }}"
+  with_items:
+    - uploads
+    - uploads/objects
+    - uploads/reports
+    - uploads/reports/images
+    - uploads/reports/documents
+
+- name: Set PHP ownership for existing uploads
+  file:
+    path: "{{ condition_reports.dir }}/public/uploads"
+    state: directory
+    recurse: true
+    owner: "{{ php.user }}"
+    group: "{{ php.group }}"
+
 - name: Provide crontab entry for daily reload of condition report records
   set_fact:
     cronjobs: "{{ cronjobs + [ 'php ' ~ condition_reports.dir ~ '/bin/console app:datahub:harvest' ] }}"

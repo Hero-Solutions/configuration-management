@@ -173,6 +173,7 @@ resourcespace:
   imagemagick:
     temporary_path: /tmp/
     memory: 8GiB
+    disk: 8GiB
   imagehub_commands: []
   imagehub_curl_calls: []
 cantaloupe:

@@ -18,6 +18,19 @@ For ResourceSpace and the RS_PTIF extensions, it is important to have adequate s
 $tempdir = tmp_dir_location; # tmp_dir_location can be /opt/tmp/ for example (must be chowned to www-data:www-data)
 ```
 
+The `resourcespace` role uses `/etc/ImageMagick-7/policy.xml` when present,
+otherwise `/etc/ImageMagick-6/policy.xml`. It updates individual XML policies
+instead of replacing the complete file, preserving other resource limits and
+security rules. The role installs `python3-lxml` for `community.general.xml`.
+
+`resourcespace.imagemagick.disk` defaults to `8GiB` for all installations; no
+per-museum setting is required. This is the pixel-cache disk limit, separate
+from `resourcespace.imagemagick.memory` (also already defaulting to `8GiB`).
+The existing memory and temporary-path settings remain managed by Ansible.
+The temporary path still defaults to `/tmp/`; this change does not move it.
+The role also retains the network-delegate and indirect-file-read restrictions
+previously supplied by the policy template.
+
 The `resourcespace_setup` role updates RS_PTIF and copies `sRGB2014.icc` and
 `ISOcoated_v2.icc` into `resourcespace.rs_ptif.repo_dir` on each run.
 New installations use the colour-conversion template; existing configurations

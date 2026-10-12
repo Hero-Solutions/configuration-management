@@ -1,5 +1,5 @@
 ---
-- name: Install subversion, php-gd, php-imagick, php-mysql, exiftool, imagemagick, inkscape, ghostscript, antiword, postfix, libimage-exiftool-perl, ffmpeg, poppler-utils, wget and vips
+- name: Install ResourceSpace dependencies
   apt:
     name:
       - subversion
@@ -8,6 +8,7 @@
       - php{{ php.version }}-mysql
       - exiftool
       - imagemagick
+      - python3-lxml
       - inkscape
       - ghostscript
       - antiword
@@ -19,11 +20,44 @@
       - libvips
       - libvips-tools
 
-- name: Set ImageMagick policy
-  template:
-    src: policy.xml
-    dest: "/etc/ImageMagick-6/policy.xml"
-    mode: "644"
+- name: Check for the ImageMagick 7 policy
+  stat:
+    path: /etc/ImageMagick-7/policy.xml
+    get_checksum: false
+    get_mime: false
+  register: resourcespace_imagemagick_7_policy
+
+- name: Select the ImageMagick policy file
+  set_fact:
+    resourcespace_imagemagick_policy_path: "{{ '/etc/ImageMagick-7/policy.xml' if resourcespace_imagemagick_7_policy.stat.exists else '/etc/ImageMagick-6/policy.xml' }}"
+
+- name: Set ImageMagick cache limits without replacing other policies
+  community.general.xml:
+    path: "{{ resourcespace_imagemagick_policy_path }}"
+    xpath: "/policymap/policy[@domain='resource' and @name='{{ item.name }}']"
+    attribute: value
+    value: "{{ item.value }}"
+  loop:
+    - name: temporary-path
+      value: "{{ resourcespace.imagemagick.temporary_path }}"
+    - name: memory
+      value: "{{ resourcespace.imagemagick.memory }}"
+    - name: disk
+      value: "{{ resourcespace.imagemagick.disk | default('8GiB') }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Keep ImageMagick network delegates and indirect file reads disabled
+  community.general.xml:
+    path: "{{ resourcespace_imagemagick_policy_path }}"
+    xpath: "/policymap/policy[@domain='{{ item.domain }}' and @pattern='{{ item.pattern }}']"
+    attribute: rights
+    value: none
+  loop:
+    - { domain: delegate, pattern: URL }
+    - { domain: delegate, pattern: HTTPS }
+    - { domain: delegate, pattern: HTTP }
+    - { domain: path, pattern: '@*' }
 
 - name: Clone ResourceSpace
   subversion:
@@ -86,4 +120,3 @@
 - name: Set fact to inform imagehub that ResourceSpace is present
   set_fact:
     is_resourcespace: true
-
