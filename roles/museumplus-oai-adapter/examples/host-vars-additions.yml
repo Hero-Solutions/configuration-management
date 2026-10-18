@@ -1,0 +1,41 @@
+# Merge into the existing museumplus_oai_adapter block; keep its other settings.
+# All 30 organisation codes supplied by Caroline. No publication-flag filter.
+museumplus_oai_adapter:
+  import_cron_enabled: true
+  import_cron_hour: "8"
+  import_cron_minute: "0"
+  museumplus:
+    org_units:
+      # Musea Brugge and related institutions
+      - org_1_MuseaBrugge
+      - org_1_Groeningemuseum
+      - org_1_Gruuthusemuseum
+      - org_1_SintJanshospitaal
+      - org_1_OnzeLieveVrouwterPotterie
+      - org_1_StadsarchiefBrugge
+      - org_1_BibliotheekBiekorfBrugge
+      - org_1_BisdomBrugge
+      - org_1_EdeleConfrerievanhetHeiligBloed
+      - org_1_ErfgoedbibliotheekBiekorf
+      - org_1_extern
+      - org_1_BrugseVrije
+      - org_1_PriveverzamelingBrugge
+      - org_1_InFlandersFieldsMuseumMuseaBrugge
+      - org_1_MuseumvoorSchoneKunstenGentMuseaBrugge
+      # MSK Gent and related institutions
+      - org_31_MuseumvoorSchoneKunstenGent
+      - org_31_SintBaafskathedraalGent
+      - org_31_SintNiklaaskerkWillebroek
+      - org_31_VoormaligecollectieMSKGent
+      # Mu.ZEE and related institutions
+      - org_32_MuZEEKunstmuseumaanzee
+      - org_32_StadOostende
+      - org_32_ProvincieWest-VlaanderenMuZee
+      - org_32_GroeningemuseumMuZee
+      - org_32_particulierMuZee
+      - org_32_OnbekendMuZee
+      - org_32_KoninklijkMuseumvoorMiddenAfrika
+      - org_32_KoninklijkMuseumvoorSchoneKunstenAntwerpenKMSKA
+      - org_32_FondationJeanneMatossian
+      - org_32_FondsRaoulServais
+      - org_32_DelenPrivateBank

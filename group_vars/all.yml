@@ -87,6 +87,8 @@ museumplus_oai_adapter:
   branch: main
   dir: /opt/museumplus-oai-adapter
   import_cron_enabled: true
+  import_cron_hour: "8"
+  import_cron_minute: "0"
   mysql:
     hostname: 127.0.0.1
     port: 3306

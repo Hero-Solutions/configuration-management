@@ -85,6 +85,16 @@
     mode: "0640"
   no_log: true
 
+- name: Configure manual object creation
+  lineinfile:
+    path: "{{ condition_reports.repo_dir }}/repo/.env"
+    regexp: '^MANUAL_OBJECT_CREATION_ENABLED='
+    line: "MANUAL_OBJECT_CREATION_ENABLED={{ condition_reports.manual_object_creation_enabled | default(true) | bool | ternary('1', '0') }}"
+    owner: "{{ application_user }}"
+    group: "{{ php.group }}"
+    mode: "0640"
+  no_log: true
+
 - name: Link condition reports repo
   file:
     src: "{{ condition_reports.repo_dir }}/repo/"

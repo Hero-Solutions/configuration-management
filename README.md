@@ -240,6 +240,7 @@ imagehub:
     server_name: imagehub.example.com
 condition_reports:
   service_url: https://conditionreports.example.com/iiif/3/
+  manual_object_creation_enabled: true
   local_login_enabled: false
   sso:
     enabled: true
@@ -254,6 +255,44 @@ condition_reports:
 ```
 
 See the [condition reports SSO guide](https://github.com/Hero-Solutions/iiif-condition-reports/blob/main/docs/sso-entra.md) for the Microsoft Entra app registration and user assignment procedure.
+
+For MuseumPlus, merge the [additional host variables](roles/museumplus-oai-adapter/examples/host-vars-additions.yml)
+into the existing `museumplus_oai_adapter` block. This lists all 30 supplied
+organisation codes under `museumplus.org_units`. An omitted or empty list disables
+the organisation filter; the category filter still applies. Keep the existing
+credentials and verify the current export URL/ID separately.
+Changing the organisation filter invalidates an unfinished import checkpoint.
+After rollout, the operator starts a fresh round with
+`php bin/console app:import-museumplus-records --restart` when this applies;
+published records and earlier raw files are retained.
+
+The role generates `.env` from `templates/museumplus.env.j2`, runs migrations and
+checks that the adapter checkout includes the mapping references and raw-storage
+code. Commit and push those adapter files to its configured branch before rollout.
+No extra settings are needed for the four sets or Axiell identifier preservation.
+
+Raw XML and JSON are retained in `<repo_dir>/shared/museumplus-raw`, linked from
+`var/museumplus-raw`. Stop active imports before the first rollout: an existing
+local archive is moved there without overwriting. Conflicting archive locations
+stop deployment for manual resolution. Include this shared directory in backups.
+
+MuseumPlus now has its own daily cronjob, by default at **08:00 server time**.
+Set `import_cron_hour`, `import_cron_minute` or `import_cron_enabled` in its block
+to change it. The previous generated MuseumPlus entry is removed from the shared
+20:00 import script; other pipeline entries keep their schedule. Imports resume
+an unfinished round or start a new one after completion. Logs append to
+`<repo_dir>/shared/log/import.log`. Remove any separately installed manual resume
+cronjob yourself if it duplicates this schedule.
+
+Local checks: `php -n -d allow_url_fopen=0 configuration-management/tests/museumplus-role.php`
+from the workspace root. These use PHP with synthetic settings; they do not run
+Ansible, load inventory or contact a server.
+
+`condition_reports.manual_object_creation_enabled` defaults to `true`. Set it to
+`false` to disable manually creating objects. The role writes
+`MANUAL_OBJECT_CREATION_ENABLED=1` or `0` to the generated application `.env`,
+after copying its template and before installing the application. Existing object
+editing and Datahub imports remain available.
 
 It is recommended to randomly generate the following passwords (the longer the better, minimum 16 characters recommended):
 * mariadb_root_password (if you are not running any MariaDB instance on the controlled machine yet)

@@ -20,6 +20,23 @@
       - museumplus_oai_adapter.oai.identifier_prefix | default('') | length > 0
       - museumplus_oai_adapter.oai.default_set_spec | default('') | length > 0
     fail_msg: "MuseumPlus OAI adapter secrets/config must be provided through host_vars or Ansible Vault, not group_vars/all.yml defaults."
+  no_log: true
+
+- name: Validate MuseumPlus organisation filter
+  assert:
+    that:
+      - museumplus_oai_adapter.museumplus.org_units | default([]) is sequence
+      - museumplus_oai_adapter.museumplus.org_units | default([]) is not string
+      - museumplus_oai_adapter.museumplus.org_units | default([]) is not mapping
+    fail_msg: "museumplus.org_units must be a YAML list of organisation codes; [] disables this filter."
+
+- name: Validate MuseumPlus organisation codes
+  assert:
+    that:
+      - item is string
+      - item is match('^org_[0-9]+_[A-Za-z0-9_-]+$')
+    fail_msg: "Use the exact organisation codes supplied by MuseumPlus in museumplus.org_units."
+  loop: "{{ museumplus_oai_adapter.museumplus.org_units | default([]) }}"
 
 - name: Make sure MuseumPlus OAI adapter database is present
   mysql_db:
@@ -52,6 +69,29 @@
     version: "{{ museumplus_oai_adapter.branch }}"
   become_user: "{{ application_user }}"
 
+- name: Check required MuseumPlus mapping and raw storage files
+  stat:
+    path: "{{ museumplus_oai_adapter.repo_dir }}/repo/{{ item }}"
+    get_checksum: false
+  loop:
+    - config/museum-groups.php
+    - config/axiell-reference.json
+    - config/axiell-reference.jsonl
+    - src/Import/RawResponseArchive.php
+    - migrations/Version20261016120000.php
+    - migrations/Version20261018120000.php
+    - migrations/Version20261018140000.php
+  register: museumplus_deployment_files
+
+- name: Require a complete MuseumPlus adapter release
+  assert:
+    that:
+      - item.stat.isreg | default(false)
+    fail_msg: "Missing {{ item.item }}. Commit and push the adapter changes to the configured branch before deploying."
+  loop: "{{ museumplus_deployment_files.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+
 - name: Create MuseumPlus OAI adapter shared folders
   file:
     path: "{{ museumplus_oai_adapter.repo_dir }}/shared/{{ item }}/"
@@ -81,6 +121,62 @@
     group: "{{ php.group }}"
     mode: "0775"
 
+# Raw responses are durable source data. Never add this folder to the cache/log
+# deletion loop. Stop a running import before deploying this one-time move.
+- name: Inspect existing MuseumPlus raw archive
+  stat:
+    path: "{{ museumplus_oai_adapter.repo_dir }}/repo/var/museumplus-raw"
+    follow: false
+    get_checksum: false
+  register: museumplus_raw_existing
+
+- name: Inspect shared MuseumPlus raw archive
+  stat:
+    path: "{{ museumplus_oai_adapter.repo_dir }}/shared/museumplus-raw"
+    follow: false
+    get_checksum: false
+  register: museumplus_raw_shared
+
+- name: Check raw archives can be preserved without overwriting
+  assert:
+    that:
+      - not museumplus_raw_existing.stat.exists or museumplus_raw_existing.stat.isdir | default(false) or museumplus_raw_existing.stat.islnk | default(false)
+      - not museumplus_raw_shared.stat.exists or (museumplus_raw_shared.stat.isdir | default(false) and not museumplus_raw_shared.stat.islnk | default(false))
+      - not (museumplus_raw_existing.stat.isdir | default(false) and not museumplus_raw_existing.stat.islnk | default(false) and museumplus_raw_shared.stat.exists)
+      - not museumplus_raw_existing.stat.islnk | default(false) or museumplus_raw_existing.stat.lnk_source == museumplus_oai_adapter.repo_dir ~ '/shared/museumplus-raw'
+    fail_msg: "Conflicting raw archive paths. Preserve both archives and resolve the paths manually; no raw files were deleted or merged."
+
+- name: Preserve existing raw files in the shared archive
+  command:
+    argv:
+      - mv
+      - --no-clobber
+      - --no-target-directory
+      - --
+      - "{{ museumplus_oai_adapter.repo_dir }}/repo/var/museumplus-raw"
+      - "{{ museumplus_oai_adapter.repo_dir }}/shared/museumplus-raw"
+  when:
+    - museumplus_raw_existing.stat.isdir | default(false)
+    - not museumplus_raw_existing.stat.islnk | default(false)
+    - not museumplus_raw_shared.stat.exists
+  become_user: "{{ application_user }}"
+
+- name: Create persistent MuseumPlus raw archive
+  file:
+    path: "{{ museumplus_oai_adapter.repo_dir }}/shared/museumplus-raw"
+    state: directory
+    owner: "{{ application_user }}"
+    group: "{{ application_user }}"
+    mode: "0700"
+
+- name: Link persistent MuseumPlus raw archive
+  file:
+    src: "{{ museumplus_oai_adapter.repo_dir }}/shared/museumplus-raw"
+    dest: "{{ museumplus_oai_adapter.repo_dir }}/repo/var/museumplus-raw"
+    state: link
+    force: false
+  become_user: "{{ application_user }}"
+
 - name: Link MuseumPlus OAI adapter shared folders
   file:
     src: "{{ museumplus_oai_adapter.repo_dir }}/shared/{{ item }}"
@@ -109,7 +205,7 @@
 # complete deployment template before any Symfony scripts or migrations run.
 - name: Copy .env for MuseumPlus OAI adapter
   template:
-    src: .env
+    src: museumplus.env.j2
     dest: "{{ museumplus_oai_adapter.repo_dir }}/repo/.env"
     owner: "{{ application_user }}"
     group: "{{ php.group }}"
@@ -153,10 +249,28 @@
     - cache
     - log
 
-- name: Provide crontab entry for MuseumPlus OAI adapter import
-  set_fact:
-    cronjobs: "{{ cronjobs + [ museumplus_oai_adapter.import_cron_command | default('php ' ~ museumplus_oai_adapter.dir ~ '/bin/console app:import-museumplus-records') ] }}"
-  when: museumplus_oai_adapter.import_cron_enabled | default(true)
+- name: Inspect the previous shared import script
+  stat:
+    path: "{{ cron_dir }}/cron/import_data.sh"
+    get_checksum: false
+  register: museumplus_previous_cron_script
+
+- name: Remove the previous MuseumPlus entry from the shared import script
+  lineinfile:
+    path: "{{ cron_dir }}/cron/import_data.sh"
+    regexp: "^{{ item | regex_escape }}$"
+    state: absent
+  loop: "{{ ['php ' ~ museumplus_oai_adapter.dir ~ '/bin/console app:import-museumplus-records', museumplus_oai_adapter.import_cron_command | default('php ' ~ museumplus_oai_adapter.dir ~ '/bin/console app:import-museumplus-records')] | unique | list }}"
+  when: museumplus_previous_cron_script.stat.isreg | default(false)
+
+- name: Schedule MuseumPlus import independently of the shared pipeline
+  cron:
+    name: "Import MuseumPlus records"
+    user: "{{ application_user }}"
+    minute: "{{ museumplus_oai_adapter.import_cron_minute | default('0') }}"
+    hour: "{{ museumplus_oai_adapter.import_cron_hour | default('8') }}"
+    job: "cd {{ museumplus_oai_adapter.dir | quote }} && {{ museumplus_oai_adapter.import_cron_command | default('php bin/console app:import-museumplus-records --no-interaction') }} >> {{ (museumplus_oai_adapter.repo_dir ~ '/shared/log/import.log') | quote }} 2>&1"
+    state: "{{ 'present' if museumplus_oai_adapter.import_cron_enabled | default(true) | bool else 'absent' }}"
 
 - name: Set up MuseumPlus OAI adapter php-fpm pool
   include_role:
