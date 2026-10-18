@@ -28,6 +28,26 @@ function task(string $name): array
     throw new RuntimeException('Missing task: '.$name);
 }
 
+// Compare the template with local production-mode YAML, without booting
+// Symfony or resolving any variables from the machine running this test.
+function checkRequiredEnvironment(array $configuration, array $env, string $file): void
+{
+    foreach ($configuration as $key => $value) {
+        if (is_string($key) && str_starts_with($key, 'when@') && $key !== 'when@prod') continue;
+        if (is_array($value)) {
+            checkRequiredEnvironment($value, $env, $file);
+        } elseif (is_string($value)) {
+            preg_match_all('/%env\(([^)]+)\)%/', $value, $matches);
+            foreach ($matches[1] as $expression) {
+                if (str_contains($expression, 'default:')) continue;
+                $parts = explode(':', $expression);
+                $name = end($parts);
+                check(array_key_exists($name, $env), 'Missing required variable '.$name.' from '.$file);
+            }
+        }
+    }
+}
+
 // Exercise the common Jinja/Twig expression subset with equivalent filters.
 // This is not an Ansible syntax-check or a remote execution test.
 $twig = new Environment(new ArrayLoader(), ['strict_variables'=>true, 'autoescape'=>false]);
@@ -49,6 +69,10 @@ $config = [
 $template = $twig->createTemplate(file_get_contents($role.'/templates/museumplus.env.j2'));
 $rendered = $template->render(['museumplus_oai_adapter'=>$config, 'mariadb_version'=>'12.1.1']);
 $env = (new Dotenv())->parse($rendered);
+$adapterConfig = dirname(__DIR__, 2).'/museumplus-oai-adapter/config';
+foreach ([$adapterConfig.'/services.yaml', ...glob($adapterConfig.'/packages/*.yaml')] as $file) {
+    checkRequiredEnvironment(Yaml::parse(file_get_contents($file)), $env, basename($file));
+}
 check($env['APP_ENV'] === 'prod' && $env['APP_DEBUG'] === '0', 'Wrong runtime mode.');
 check($env['APP_SECRET'] === $config['app_secret'] && $env['MUSEUMPLUS_PASSWORD'] === $config['museumplus']['password'], 'Template quoting changed a synthetic secret.');
 foreach (['export_url','username','search_field_path','search_operand','timeout_seconds'] as $key) {

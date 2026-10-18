@@ -104,6 +104,8 @@
 - name: Copy imagehub.yaml for imagehub
   include_tasks:
     file: place_config.yml
+  vars:
+    imagehub_defer_cache_clear: true
 
 - name: Link imagehub repo
   file:
@@ -111,19 +113,32 @@
     dest: "{{ imagehub.dir }}"
     state: link
 
-- name: Remove local ImageHub Composer lock files
-  file:
-    path: "{{ imagehub.dir }}/{{ item }}"
-    state: absent
-  with_items:
-    - composer.lock
-    - symfony.lock
-  become_user: "{{ application_user }}"
-
 - name: Install imagehub through composer
-  command: composer install
+  command: composer install --no-interaction --no-scripts
   args:
     chdir: "{{ imagehub.dir }}"
+  become_user: "{{ application_user }}"
+
+- name: Remove old Imagehub Symfony cache without booting the application
+  file:
+    path: "{{ imagehub.repo_dir }}/shared/cache"
+    state: absent
+
+- name: Recreate Imagehub Symfony cache folder
+  file:
+    path: "{{ imagehub.repo_dir }}/shared/cache"
+    state: directory
+    mode: "775"
+    owner: "{{ application_user }}"
+    group: "{{ php.group }}"
+
+- name: Run Imagehub Composer post-install scripts
+  command: composer run-script post-install-cmd --no-interaction
+  args:
+    chdir: "{{ imagehub.dir }}"
+  environment:
+    APP_ENV: prod
+    APP_DEBUG: "0"
   become_user: "{{ application_user }}"
 
 - name: Chown cache and log folders
