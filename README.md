@@ -241,6 +241,10 @@ imagehub:
 condition_reports:
   service_url: https://conditionreports.example.com/iiif/3/
   manual_object_creation_enabled: true
+  external_loans_enabled: false
+  tms_api_url: https://datahub.example.com/loan_projects.php
+  tms_api_username: condition_reports_basic_auth_user
+  tms_api_password: condition_reports_basic_auth_password
   local_login_enabled: false
   sso:
     enabled: true
@@ -293,6 +297,20 @@ Ansible, load inventory or contact a server.
 `MANUAL_OBJECT_CREATION_ENABLED=1` or `0` to the generated application `.env`,
 after copying its template and before installing the application. Existing object
 editing and Datahub imports remain available.
+
+For TMS loans and exhibitions, set `condition_reports.external_loans_enabled`
+to `true` and provide `tms_api_url`, `tms_api_username` and `tms_api_password`.
+Use the base HTTPS URL without pagination parameters and the original Basic Auth
+password, not its hash or a database password. The role writes these four settings
+to the generated application `.env` after copying its template and before
+installing the application. Missing settings default to disabled and empty strings.
+Credential output is suppressed with `no_log`; file permissions remain `0640`.
+The template does not need additional TMS lines. The daily `app:tms:sync` cronjob
+is separate; schedule it after the completed dump and object harvest.
+
+Local settings/quoting check: `php -n -d allow_url_fopen=0 configuration-management/tests/condition-reports-tms.php`.
+This uses synthetic settings and the local Symfony parser; it does not run Ansible,
+load inventory or read an existing `.env`.
 
 It is recommended to randomly generate the following passwords (the longer the better, minimum 16 characters recommended):
 * mariadb_root_password (if you are not running any MariaDB instance on the controlled machine yet)

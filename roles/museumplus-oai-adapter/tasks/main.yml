@@ -81,6 +81,8 @@
     - migrations/Version20261016120000.php
     - migrations/Version20261018120000.php
     - migrations/Version20261018140000.php
+    - migrations/Version20261018160000.php
+    - migrations/Version20261018170000.php
   register: museumplus_deployment_files
 
 - name: Require a complete MuseumPlus adapter release
