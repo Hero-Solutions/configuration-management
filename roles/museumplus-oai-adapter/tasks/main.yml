@@ -14,29 +14,28 @@
       - museumplus_oai_adapter.museumplus.export_url | default('') | length > 0
       - museumplus_oai_adapter.museumplus.username | default('') | length > 0
       - museumplus_oai_adapter.museumplus.password | default('') | length > 0
-      - museumplus_oai_adapter.museumplus.search_field_path | default('') | length > 0
-      - museumplus_oai_adapter.museumplus.search_operand | default('') | length > 0
       - museumplus_oai_adapter.museumplus.timeout_seconds | default('') | string | length > 0
       - museumplus_oai_adapter.oai.identifier_prefix | default('') | length > 0
       - museumplus_oai_adapter.oai.default_set_spec | default('') | length > 0
     fail_msg: "MuseumPlus OAI adapter secrets/config must be provided through host_vars or Ansible Vault, not group_vars/all.yml defaults."
   no_log: true
 
-- name: Validate MuseumPlus organisation filter
+- name: Validate MuseumPlus webpublication filter
   assert:
     that:
-      - museumplus_oai_adapter.museumplus.org_units | default([]) is sequence
-      - museumplus_oai_adapter.museumplus.org_units | default([]) is not string
-      - museumplus_oai_adapter.museumplus.org_units | default([]) is not mapping
-    fail_msg: "museumplus.org_units must be a YAML list of organisation codes; [] disables this filter."
+      - museumplus_oai_adapter.museumplus.webpublication_ids | default([]) is sequence
+      - museumplus_oai_adapter.museumplus.webpublication_ids | default([]) is not string
+      - museumplus_oai_adapter.museumplus.webpublication_ids | default([]) is not mapping
+      - museumplus_oai_adapter.museumplus.webpublication_ids | default([]) | length > 0
+    fail_msg: "museumplus.webpublication_ids must be a nonempty YAML list of MuseumPlus webpublication IDs."
 
-- name: Validate MuseumPlus organisation codes
+- name: Validate MuseumPlus webpublication IDs
   assert:
     that:
-      - item is string
-      - item is match('^org_[0-9]+_[A-Za-z0-9_-]+$')
-    fail_msg: "Use the exact organisation codes supplied by MuseumPlus in museumplus.org_units."
-  loop: "{{ museumplus_oai_adapter.museumplus.org_units | default([]) }}"
+      - item is string or item is integer
+      - item | string is match('^[1-9][0-9]*$')
+    fail_msg: "Use positive numeric IDs in museumplus.webpublication_ids, not flag names or organisation codes."
+  loop: "{{ museumplus_oai_adapter.museumplus.webpublication_ids }}"
 
 - name: Make sure MuseumPlus OAI adapter database is present
   mysql_db:
@@ -207,13 +206,26 @@
 # complete deployment template before any Symfony scripts or migrations run.
 - name: Copy .env for MuseumPlus OAI adapter
   template:
-    src: museumplus.env.j2
+    src: .env
     dest: "{{ museumplus_oai_adapter.repo_dir }}/repo/.env"
     owner: "{{ application_user }}"
     group: "{{ php.group }}"
     mode: "0640"
   no_log: true
   diff: false
+
+- name: Remove old MuseumPlus Symfony cache without booting the application
+  file:
+    path: "{{ museumplus_oai_adapter.repo_dir }}/shared/cache"
+    state: absent
+
+- name: Recreate MuseumPlus Symfony cache folder
+  file:
+    path: "{{ museumplus_oai_adapter.repo_dir }}/shared/cache"
+    state: directory
+    mode: "0775"
+    owner: "{{ application_user }}"
+    group: "{{ php.group }}"
 
 - name: Run MuseumPlus OAI adapter Composer post-install scripts
   command: composer run-script post-install-cmd --no-dev --no-interaction
@@ -231,12 +243,6 @@
   environment:
     APP_ENV: prod
     APP_DEBUG: "0"
-  become_user: "{{ application_user }}"
-
-- name: Clear MuseumPlus OAI adapter prod cache
-  command: php bin/console cache:clear --env=prod --no-debug
-  args:
-    chdir: "{{ museumplus_oai_adapter.dir }}"
   become_user: "{{ application_user }}"
 
 - name: Chown MuseumPlus OAI adapter cache and log folders
