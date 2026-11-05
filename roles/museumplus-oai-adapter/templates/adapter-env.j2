@@ -1,0 +1,24 @@
+{% set settings = museumplus_oai_adapter.museumplus %}
+{% set mysql = museumplus_oai_adapter.mysql %}
+{% set db_user = mysql.username | urlencode | replace('/', '%2F') %}
+{% set db_password = mysql.password | urlencode | replace('/', '%2F') %}
+{% set dsn = 'mysql://' ~ db_user ~ ':' ~ db_password ~ '@' ~ mysql.hostname ~ ':' ~ mysql.port ~ '/' ~ mysql.database ~ '?serverVersion=' ~ mariadb_version ~ '-MariaDB&charset=utf8mb4' %}
+APP_ENV=prod
+APP_DEBUG=0
+{% for setting in [
+    ['APP_SECRET', museumplus_oai_adapter.app_secret],
+    ['DATABASE_URL', dsn],
+    ['MUSEUMPLUS_EXPORT_URL', settings.export_url],
+    ['MUSEUMPLUS_USERNAME', settings.username],
+    ['MUSEUMPLUS_PASSWORD', settings.password],
+    ['MUSEUMPLUS_TIMEOUT_SECONDS', settings.timeout_seconds],
+    ['MUSEUMPLUS_OAI_IDENTIFIER_PREFIX', museumplus_oai_adapter.oai.identifier_prefix],
+    ['MUSEUMPLUS_DEFAULT_SET_SPEC', museumplus_oai_adapter.oai.default_set_spec]
+] %}
+{{ setting[0] }}='{{ setting[1] | string | replace("'", "'\"'\"'") }}'
+{% endfor %}
+{% if settings.webpublication_ids | default([]) | length > 0 %}
+MUSEUMPLUS_WEBPUBLICATION_IDS='{{ settings.webpublication_ids | join(',') }}'
+{% else %}
+MUSEUMPLUS_ORG_UNITS='{{ settings.org_units | join(',') }}'
+{% endif %}

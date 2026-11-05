@@ -17,7 +17,6 @@ $_ENV = $_SERVER = [];
 $role = dirname(__DIR__).'/roles/museumplus-oai-adapter';
 $tasks = Yaml::parse(file_get_contents($role.'/tasks/main.yml'));
 $example = Yaml::parse(file_get_contents($role.'/examples/host-vars-additions.yml'))['museumplus_oai_adapter'];
-$publicationIds = $example['museumplus']['webpublication_ids'];
 function check(bool $condition, string $message): void
 {
     if (!$condition) throw new RuntimeException($message);
@@ -53,27 +52,28 @@ function checkRequiredEnvironment(array $configuration, array $env, string $file
 // This is not an Ansible syntax-check or a remote execution test.
 $twig = new Environment(new ArrayLoader(), ['strict_variables'=>true, 'autoescape'=>false]);
 $twig->addFilter(new TwigFilter('string', static fn (mixed $v): string => (string) $v));
-$twig->addFilter(new TwigFilter('to_json', static fn (mixed $v, bool $ensure_ascii = true): string => json_encode($v, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | ($ensure_ascii ? 0 : JSON_UNESCAPED_UNICODE))));
 $twig->addFilter(new TwigFilter('replace', static fn (string $v, string $from, string $to): string => str_replace($from, $to, $v)));
 $twig->addFilter(new TwigFilter('urlencode', static fn (mixed $v): string => str_replace('%2F', '/', rawurlencode((string) $v))));
+$twig->addFilter(new TwigFilter('ternary', static fn (bool $value, mixed $yes, mixed $no): mixed => $value ? $yes : $no));
 $twig->addTest(new TwigTest('sequence', static fn (mixed $v): bool => is_array($v) || is_string($v)));
 $twig->addTest(new TwigTest('mapping', static fn (mixed $v): bool => is_array($v) && !array_is_list($v)));
 $twig->addTest(new TwigTest('string', is_string(...)));
 $twig->addTest(new TwigTest('integer', is_int(...)));
 $twig->addTest(new TwigTest('match', static fn (string $v, string $pattern): bool => preg_match('~'.$pattern.'~D', $v) === 1));
 $config = [
-    'app_secret'=>'fake-${UNCHANGED}-"quoted"-é',
+    'app_secret'=>'fake-${UNCHANGED}-"quoted"-é\'',
     'mysql'=>['username'=>'test/u@ser', 'password'=>'fake/$@:#?% "quote"', 'hostname'=>'database.invalid', 'port'=>3306, 'database'=>'fake-db'],
     'museumplus'=>[
         'export_url'=>'https://museumplus.invalid/export?example=1&next=2',
         'username'=>'test@example.invalid', 'password'=>'fake-${UNCHANGED}-"quoted"-é\\path',
         'timeout_seconds'=>180, 'webpublication_ids'=>['101', 202],
-        // Obsolete settings must not be emitted into the deployed environment.
+        // Publication IDs take precedence over organisation codes.
         'search_field_path'=>'ObjCategoryVoc', 'search_operand'=>'999', 'org_units'=>['org_1_Test'],
     ],
     'oai'=>['identifier_prefix'=>'test:', 'default_set_spec'=>'vkc'],
 ];
-$template = $twig->createTemplate(file_get_contents($role.'/templates/.env'));
+$environmentTask = task('Copy .env for MuseumPlus OAI adapter');
+$template = $twig->createTemplate(file_get_contents($role.'/templates/'.$environmentTask['template']['src']));
 $rendered = $template->render(['museumplus_oai_adapter'=>$config, 'mariadb_version'=>'12.1.1']);
 $env = (new Dotenv())->parse($rendered);
 $adapterConfig = dirname(__DIR__, 2).'/museumplus-oai-adapter/config';
@@ -89,7 +89,7 @@ check($env['MUSEUMPLUS_OAI_IDENTIFIER_PREFIX'] === 'test:' && $env['MUSEUMPLUS_D
 $dsn = parse_url($env['DATABASE_URL']);
 check(rawurldecode($dsn['user']) === $config['mysql']['username'] && rawurldecode($dsn['pass']) === $config['mysql']['password'], 'Database credentials were not URL-encoded correctly.');
 check($dsn['host'] === 'database.invalid' && str_contains($dsn['query'], '12.1.1-MariaDB'), 'Wrong database URL.');
-check($publicationIds === [], 'Host example must not contain environment-specific publication IDs.');
+check($example['museumplus'] === ['webpublication_ids'=>[], 'org_units'=>[]], 'Host example must leave the filters empty.');
 check(MuseumPlusSearch::parsePublicationIds($env['MUSEUMPLUS_WEBPUBLICATION_IDS']) === ['101', '202'], 'Publication IDs lost during template rendering.');
 foreach (['MUSEUMPLUS_ORG_UNITS','MUSEUMPLUS_SEARCH_FIELD_PATH','MUSEUMPLUS_SEARCH_OPERAND'] as $legacy) check(!array_key_exists($legacy, $env), 'Legacy filter still emitted: '.$legacy);
 $doc = new DOMDocument();
@@ -98,27 +98,65 @@ $xpath = new DOMXPath($doc);
 $xpath->registerNamespace('s', 'http://www.zetcom.com/ria/ws/module/search');
 check($xpath->evaluate('count(//s:expert/s:or/s:equalsField[@fieldPath="ObjWebPublicationGrp.WebPublicationVoc"])') === 2.0, 'Publication flags are not OR alternatives.');
 check($xpath->evaluate('count(//s:and | //s:equalsField[@fieldPath="__orgUnit" or @fieldPath="ObjCategoryVoc"])') === 0.0, 'Legacy filters still restrict the request.');
-// Filter validation is checked below with synthetic host settings.
-$listGuards = task('Validate MuseumPlus webpublication filter')['assert']['that'];
-$idGuards = task('Validate MuseumPlus webpublication IDs')['assert']['that'];
+// Exercise validation in deployment order with synthetic host settings.
+$validationTasks = [
+    task('Validate MuseumPlus webpublication filter'),
+    task('Validate MuseumPlus webpublication IDs'),
+    task('Validate MuseumPlus organisation filter'),
+    task('Validate MuseumPlus organisation codes'),
+];
+function allowsSettings(Environment $twig, array $validationTasks, array $settings): bool
+{
+    $variables = ['museumplus_oai_adapter'=>['museumplus'=>$settings]];
+    foreach ($validationTasks as $task) {
+        if (isset($task['when']) && $twig->createTemplate('{% if '.$task['when'].' %}yes{% endif %}')->render($variables) !== 'yes') {
+            continue;
+        }
+        $checks = '{% if not (('.implode(') and (', $task['assert']['that']).')) %}invalid{% endif %}';
+        if (isset($task['loop'])) {
+            $items = trim(substr($task['loop'], 2, -2));
+            $checks = '{% for item in '.$items.' %}'.$checks.'{% endfor %}';
+        }
+        if ($twig->createTemplate($checks)->render($variables) !== '') {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 foreach ([
     [[], false], [['webpublication_ids'=>[]], false], [['webpublication_ids'=>'101,202'], false],
     [['webpublication_ids'=>['named'=>'101']], false], [['webpublication_ids'=>['101',202]], true],
     [['webpublication_ids'=>['0']], false], [['webpublication_ids'=>['Extranet']], false],
     [['webpublication_ids'=>[true]], false], [['webpublication_ids'=>[1.5]], false],
     [['webpublication_ids'=>['101"/><or>']], false], [['webpublication_ids'=>['101']], true],
+    [['org_units'=>['org_1_Test']], true],
+    [['webpublication_ids'=>[], 'org_units'=>['org_1_Test', 'org_2_Test']], true],
+    [['webpublication_ids'=>['101'], 'org_units'=>'unused'], true],
+    [['webpublication_ids'=>['invalid'], 'org_units'=>['org_1_Test']], false],
+    [['org_units'=>[]], false], [['org_units'=>'org_1_Test'], false],
+    [['org_units'=>['named'=>'org_1_Test']], false], [['org_units'=>[101]], false],
+    [['org_units'=>['org_1_Test"/><or>']], false],
 ] as [$settings, $expected]) {
-    $allowed = true;
-    foreach ($listGuards as $guard) {
-        $allowed = $allowed && $twig->createTemplate('{% if '.$guard.' %}yes{% endif %}')->render(['museumplus_oai_adapter'=>['museumplus'=>$settings]]) === 'yes';
+    $allowed = allowsSettings($twig, $validationTasks, $settings);
+    check($allowed === $expected, 'Filter configuration guard failed for '.json_encode($settings));
+    if (!$allowed) {
+        continue;
     }
-    if ($allowed) foreach ($settings['webpublication_ids'] as $item) {
-        foreach ($idGuards as $guard) $allowed = $allowed && $twig->createTemplate('{% if '.$guard.' %}yes{% endif %}')->render(['item'=>$item]) === 'yes';
+
+    $filterConfig = $config;
+    unset($filterConfig['museumplus']['webpublication_ids'], $filterConfig['museumplus']['org_units']);
+    $filterConfig['museumplus'] = array_replace($filterConfig['museumplus'], $settings);
+    $env = (new Dotenv())->parse($template->render(['museumplus_oai_adapter'=>$filterConfig, 'mariadb_version'=>'12.1.1']));
+    if (!empty($settings['webpublication_ids'])) {
+        check($env['MUSEUMPLUS_WEBPUBLICATION_IDS'] === implode(',', $settings['webpublication_ids']) && !isset($env['MUSEUMPLUS_ORG_UNITS']), 'Template must only emit publication IDs when present.');
+    } else {
+        check($env['MUSEUMPLUS_ORG_UNITS'] === implode(',', $settings['org_units']) && !isset($env['MUSEUMPLUS_WEBPUBLICATION_IDS']), 'Template must only emit organisation codes when publication IDs are absent.');
     }
-    check($allowed === $expected, 'Publication configuration guard failed for '.json_encode($settings));
 }
 
-echo "PASS: settings, synthetic secret quoting, DSN and publication OR filter; invalid lists rejected; legacy filters omitted\n";
+echo "PASS: settings, synthetic secret quoting, DSN, publication precedence, organisation fallback and invalid lists\n";
 
 $guards = task('Check raw archives can be preserved without overwriting')['assert']['that'];
 $root = '/opt/.repos/adapter';
@@ -142,8 +180,8 @@ foreach ([
 check(!in_array('museumplus-raw', task('Delete existing MuseumPlus OAI adapter var folders')['with_items'], true), 'Raw archive entered the deletion loop.');
 check(task('Link persistent MuseumPlus raw archive')['file']['force'] === false, 'Raw link could overwrite existing data.');
 check(in_array('--no-clobber', task('Preserve existing raw files in the shared archive')['command']['argv'], true), 'Raw move could overwrite a shared archive.');
-check(task('Copy .env for MuseumPlus OAI adapter')['template']['src'] === '.env', 'Deployment does not use templates/.env.');
-check(task('Copy .env for MuseumPlus OAI adapter')['no_log'] === true && task('Copy .env for MuseumPlus OAI adapter')['diff'] === false, 'Template may expose settings in output.');
+check($environmentTask['template']['src'] === 'adapter-env.j2', 'Deployment does not use the tested template.');
+check($environmentTask['no_log'] === true && $environmentTask['diff'] === false, 'Template may expose settings in output.');
 check(isset(task('Schedule MuseumPlus import independently of the shared pipeline')['cron']), 'Missing dedicated schedule.');
 check(task('Remove the previous MuseumPlus entry from the shared import script')['lineinfile']['state'] === 'absent', 'Old scheduled entry was not retired.');
 echo "PASS: raw archive migration/conflict guards, protected template and separate import schedule\n";

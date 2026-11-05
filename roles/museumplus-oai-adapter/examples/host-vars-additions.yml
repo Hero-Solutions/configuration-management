@@ -1,10 +1,11 @@
 # Merge into the existing museumplus_oai_adapter block; keep its other settings.
-# Set these IDs in the host-specific configuration; the role has no default IDs.
-# Remove search_field_path, search_operand and org_units from the existing block.
+# Set the filter in the host-specific configuration.
 museumplus_oai_adapter:
   import_cron_enabled: true
   import_cron_hour: "8"
   import_cron_minute: "0"
   museumplus:
-    # Fill in the publication IDs in this host's private configuration.
+    # A nonempty list takes precedence over org_units.
     webpublication_ids: []
+    # Fill in the MuseumPlus organisation codes when webpublication_ids is empty.
+    org_units: []

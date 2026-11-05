@@ -26,8 +26,7 @@
       - museumplus_oai_adapter.museumplus.webpublication_ids | default([]) is sequence
       - museumplus_oai_adapter.museumplus.webpublication_ids | default([]) is not string
       - museumplus_oai_adapter.museumplus.webpublication_ids | default([]) is not mapping
-      - museumplus_oai_adapter.museumplus.webpublication_ids | default([]) | length > 0
-    fail_msg: "museumplus.webpublication_ids must be a nonempty YAML list of MuseumPlus webpublication IDs."
+    fail_msg: "museumplus.webpublication_ids must be a YAML list of MuseumPlus webpublication IDs."
 
 - name: Validate MuseumPlus webpublication IDs
   assert:
@@ -35,7 +34,25 @@
       - item is string or item is integer
       - item | string is match('^[1-9][0-9]*$')
     fail_msg: "Use positive numeric IDs in museumplus.webpublication_ids, not flag names or organisation codes."
-  loop: "{{ museumplus_oai_adapter.museumplus.webpublication_ids }}"
+  loop: "{{ museumplus_oai_adapter.museumplus.webpublication_ids | default([]) }}"
+
+- name: Validate MuseumPlus organisation filter
+  assert:
+    that:
+      - museumplus_oai_adapter.museumplus.org_units | default([]) is sequence
+      - museumplus_oai_adapter.museumplus.org_units | default([]) is not string
+      - museumplus_oai_adapter.museumplus.org_units | default([]) is not mapping
+      - museumplus_oai_adapter.museumplus.org_units | default([]) | length > 0
+    fail_msg: "Without webpublication_ids, museumplus.org_units must be a nonempty YAML list of MuseumPlus organisation codes."
+  when: museumplus_oai_adapter.museumplus.webpublication_ids | default([]) | length == 0
+
+- name: Validate MuseumPlus organisation codes
+  assert:
+    that:
+      - item is string
+      - item is match('^org_[0-9]+_[A-Za-z0-9_-]+$')
+    fail_msg: "Use the exact MuseumPlus organisation codes in museumplus.org_units."
+  loop: "{{ (museumplus_oai_adapter.museumplus.webpublication_ids | default([]) | length == 0) | ternary(museumplus_oai_adapter.museumplus.org_units | default([]), []) }}"
 
 - name: Make sure MuseumPlus OAI adapter database is present
   mysql_db:
@@ -206,7 +223,7 @@
 # complete deployment template before any Symfony scripts or migrations run.
 - name: Copy .env for MuseumPlus OAI adapter
   template:
-    src: .env
+    src: adapter-env.j2
     dest: "{{ museumplus_oai_adapter.repo_dir }}/repo/.env"
     owner: "{{ application_user }}"
     group: "{{ php.group }}"

@@ -191,6 +191,7 @@ museumplus_oai_adapter:
     username: museumplus_username
     password: museumplus_password
     webpublication_ids: museumplus_webpublication_ids
+    org_units: museumplus_org_units
     timeout_seconds: museumplus_timeout_seconds
   oai:
     identifier_prefix: museumplus_oai_identifier_prefix
@@ -265,19 +266,14 @@ See the [condition reports SSO guide](https://github.com/Hero-Solutions/iiif-con
 
 For MuseumPlus, merge the [additional host variables](roles/museumplus-oai-adapter/examples/host-vars-additions.yml)
 into the existing `museumplus_oai_adapter` block in the host-specific configuration.
-Set `museumplus.webpublication_ids` to the IDs for VKC datahub and Extranet.
-The template reads this list from the host variables; the role has no default IDs.
-The adapter fetches either flag in one paginated import, without organisation or
-category restrictions. With only the VKC datahub flag, Extranet-only records are not fetched.
-An omitted, empty or invalid list is rejected. Remove `search_field_path`,
-`search_operand` and `org_units`; these settings are no longer used. Keep the
-existing credentials and verify the current export URL/ID separately.
-Changing the publication selection invalidates an unfinished import checkpoint.
-After rollout, the operator starts a fresh round with
-`php bin/console app:import-museumplus-records --restart` when this applies;
-published records and earlier raw files are retained.
+A nonempty `museumplus.webpublication_ids` list selects records matching any of
+the configured publication IDs. If the list is missing or empty, set
+`museumplus.org_units` to a nonempty list of MuseumPlus organisation codes.
+The template writes only the selected filter. Invalid active filters stop deployment.
+The adapter still uses the publication flags on each returned record to select its OAI sets.
+The next regular import starts at offset zero after a filter change.
 
-The role generates `.env` from `templates/.env`, runs migrations and
+The role generates `.env` from `templates/adapter-env.j2`, runs migrations and
 checks that the adapter checkout includes the mapping references and raw-storage
 code. Commit and push those adapter files to its configured branch before rollout.
 No extra settings are needed for the four sets or Axiell identifier preservation.
